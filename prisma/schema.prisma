@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum TripStatus {
+  DRAFT
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum UserType {
+  EMPLOYEE
+  TOURIST
+}
+
+model Employee {
+  id             String       @id @default(uuid()) @db.Uuid
+  fullName       String
+  email          String       @unique
+  password       String
+  role           Role
+  birthDate      DateTime
+  gender         Gender
+  nationality    String
+  passportNumber String
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  assignments    Assignment[]
+}
+
+model Tourist {
+  id             String       @id @default(uuid()) @db.Uuid
+  fullName       String
+  email          String       @unique
+  password       String
+  birthDate      DateTime
+  gender         Gender
+  nationality    String
+  passportNumber String       @unique
+  phoneNumber    String
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  assignments    Assignment[]
+}
+
+model Destination {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  country     String
+  city        String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  trips       Trip[]
+}
+
+model Trip {
+  id            String      @id @default(uuid()) @db.Uuid
+  destinationId String      @db.Uuid
+  name          String
+  description   String
+  startDate     DateTime
+  endDate       DateTime
+  status        TripStatus
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([destinationId])
+}
+
+model Assignment {
+  id         String   @id @default(uuid()) @db.Uuid
+  employeeId String   @db.Uuid
+  touristId  String   @db.Uuid
+  assignedAt DateTime @default(now())
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tourist    Tourist  @relation(fields: [touristId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([employeeId])
+  @@index([touristId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userType  UserType
+  userId    String   @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
