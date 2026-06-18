@@ -18,7 +18,7 @@ export class TokenService {
 
     return this.jwtService.sign(payload, {
       secret,
-      expiresIn,
+      expiresIn: expiresIn as any,
     });
   }
 
@@ -27,7 +27,7 @@ export class TokenService {
     const expiresIn = this.configService.get<string>('jwt.refreshExpiresIn') ?? '';
     const refreshToken = this.jwtService.sign(payload, {
       secret,
-      expiresIn,
+      expiresIn: expiresIn as any,
     });
     const refreshTokenHash = await this.passwordService.hash(refreshToken);
 

@@ -5,7 +5,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -55,20 +54,21 @@ model Employee {
 }
 
 model Tourist {
-  id             String       @id @default(uuid()) @db.Uuid
-  fullName       String
-  email          String       @unique
-  password       String
-  birthDate      DateTime
-  gender         Gender
-  nationality    String
-  passportNumber String       @unique
-  phoneNumber    String
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?
-  assignments    Assignment[]
+  id                String              @id @default(uuid()) @db.Uuid
+  fullName          String
+  email             String              @unique
+  password          String
+  birthDate         DateTime
+  gender            Gender
+  nationality       String
+  passportNumber    String              @unique
+  phoneNumber       String
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deletedAt         DateTime?
+  assignments       Assignment[]
+  tripParticipants  TripParticipant[]
 }
 
 model Destination {
@@ -85,17 +85,18 @@ model Destination {
 }
 
 model Trip {
-  id            String      @id @default(uuid()) @db.Uuid
-  destinationId String      @db.Uuid
-  name          String
-  description   String
-  startDate     DateTime
-  endDate       DateTime
-  status        TripStatus
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  deletedAt     DateTime?
-  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                String             @id @default(uuid()) @db.Uuid
+  destinationId     String             @db.Uuid
+  name              String
+  description       String
+  startDate         DateTime
+  endDate           DateTime
+  status            TripStatus
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  destination       Destination        @relation(fields: [destinationId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tripParticipants  TripParticipant[]
 
   @@index([destinationId])
 }
@@ -109,6 +110,19 @@ model Assignment {
   tourist    Tourist  @relation(fields: [touristId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([employeeId])
+  @@index([touristId])
+}
+
+model TripParticipant {
+  id        String   @id @default(uuid()) @db.Uuid
+  tripId    String   @db.Uuid
+  touristId String   @db.Uuid
+  joinedAt  DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tourist   Tourist  @relation(fields: [touristId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([tripId, touristId])
+  @@index([tripId])
   @@index([touristId])
 }
 
