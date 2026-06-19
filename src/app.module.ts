@@ -7,7 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { PrismaExceptionFilter } from './common/exceptions/prisma-exception.filter';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmployeeModule } from './modules/employee/employee.module';
-import { TouristModule } from './modules/tourist/tourist.module';
+import { TouristsModule } from './modules/tourists/tourists.module';
 import { DestinationModule } from './modules/destination/destination.module';
 import { TripModule } from './modules/trip/trip.module';
 import { AssignmentModule } from './modules/assignment/assignment.module';
@@ -22,7 +22,7 @@ import { AssignmentModule } from './modules/assignment/assignment.module';
     PrismaModule,
     AuthModule,
     EmployeeModule,
-    TouristModule,
+    TouristsModule,
     DestinationModule,
     TripModule,
     AssignmentModule,

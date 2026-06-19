@@ -32,41 +32,55 @@ enum TripStatus {
 }
 
 
+enum TouristStatus {
+  ACTIVE
+  INACTIVE
+  BLACKLISTED
+}
 
 model Employee {
-  id             String         @id @default(uuid()) @db.Uuid
-  fullName       String
-  email          String         @unique
-  password       String
-  role           Role
-  birthDate      DateTime
-  gender         Gender
-  nationality    String
-  passportNumber String
-  isActive       Boolean        @default(true)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  deletedAt      DateTime?
-  assignments    Assignment[]
-  refreshTokens  RefreshToken[]
+  id              String         @id @default(uuid()) @db.Uuid
+  fullName        String
+  email           String         @unique
+  password        String
+  role            Role
+  birthDate       DateTime
+  gender          Gender
+  nationality     String
+  passportNumber  String
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  assignments     Assignment[]
+  refreshTokens   RefreshToken[]
+  createdTourists Tourist[]      @relation("CreatedByEmployee")
+  updatedTourists Tourist[]      @relation("UpdatedByEmployee")
 }
 
 model Tourist {
-  id                String              @id @default(uuid()) @db.Uuid
-  fullName          String
-  email             String              @unique
-  password          String
-  birthDate         DateTime
-  gender            Gender
-  nationality       String
-  passportNumber    String              @unique
-  phoneNumber       String
-  isActive          Boolean             @default(true)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  deletedAt         DateTime?
-  assignments       Assignment[]
-  tripParticipants  TripParticipant[]
+  id                  String          @id @default(uuid()) @db.Uuid
+  fullName            String
+  birthDate           DateTime
+  gender              Gender
+  passportNumber      String          @unique
+  nationality         String
+  email               String?
+  phone               String?
+  notes               String?
+  status              TouristStatus   @default(ACTIVE)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deletedAt           DateTime?
+  createdByEmployeeId String          @db.Uuid
+  updatedByEmployeeId String?         @db.Uuid
+  createdByEmployee   Employee        @relation("CreatedByEmployee", fields: [createdByEmployeeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updatedByEmployee   Employee?       @relation("UpdatedByEmployee", fields: [updatedByEmployeeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assignments         Assignment[]
+  tripParticipants    TripParticipant[]
+
+  @@index([createdByEmployeeId])
+  @@index([updatedByEmployeeId])
 }
 
 model Destination {
