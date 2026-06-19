@@ -13,6 +13,13 @@ async function bootstrap() {
 
   app.use(helmet());
   app.use(compression());
+
+  const corsOrigins = configService.get<string[]>('corsOrigins') ?? [];
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -22,8 +29,11 @@ async function bootstrap() {
   );
   app.enableShutdownHooks();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('/api/docs', app, document);
+  const enableSwagger = configService.get<boolean>('enableSwagger') ?? false;
+  if (enableSwagger) {
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('/api/docs', app, document);
+  }
 
   await app.listen(configService.get<number>('port') ?? 3000);
 }

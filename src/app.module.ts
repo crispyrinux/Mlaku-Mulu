@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import appConfig from './config/app.config';
 import { envValidationSchema } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaExceptionFilter } from './common/exceptions/prisma-exception.filter';
+import { ThrottlerExceptionFilter } from './common/exceptions/throttler-exception.filter';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { TouristsModule } from './modules/tourists/tourists.module';
@@ -21,6 +23,16 @@ import { VisaApplicationsModule } from './modules/visa-applications/visa-applica
       load: [appConfig],
       validationSchema: envValidationSchema,
     }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [
+        {
+          ttl: config.get<number>('throttle.ttl') ?? 60000,
+          limit: config.get<number>('throttle.limit') ?? 100,
+        },
+      ],
+    }),
     PrismaModule,
     AuthModule,
     EmployeeModule,
@@ -33,8 +45,16 @@ import { VisaApplicationsModule } from './modules/visa-applications/visa-applica
   ],
   providers: [
     {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
       provide: APP_FILTER,
       useClass: PrismaExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: ThrottlerExceptionFilter,
     },
   ],
 })
