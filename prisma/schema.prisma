@@ -52,10 +52,12 @@ model Employee {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   deletedAt       DateTime?
-  assignments     Assignment[]
-  refreshTokens   RefreshToken[]
-  createdTourists Tourist[]      @relation("CreatedByEmployee")
-  updatedTourists Tourist[]      @relation("UpdatedByEmployee")
+  assignments             Assignment[]
+  refreshTokens           RefreshToken[]
+  createdTourists         Tourist[]         @relation("CreatedByEmployee")
+  updatedTourists         Tourist[]         @relation("UpdatedByEmployee")
+  createdVisaApplications VisaApplication[] @relation("VisaCreatedByEmployee")
+  updatedVisaApplications VisaApplication[] @relation("VisaUpdatedByEmployee")
 }
 
 model Tourist {
@@ -78,6 +80,7 @@ model Tourist {
   passport            Passport?
   assignments         Assignment[]
   tripParticipants    TripParticipant[]
+  visaApplications    VisaApplication[]
 
   @@index([createdByEmployeeId])
   @@index([updatedByEmployeeId])
@@ -161,4 +164,38 @@ model RefreshToken {
   employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([employeeId])
+}
+
+enum VisaApplicationStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model VisaApplication {
+  id                  String                @id @default(uuid()) @db.Uuid
+  applicationNumber   String                @unique
+  touristId           String                @db.Uuid
+  country             String
+  visaType            String
+  status              VisaApplicationStatus @default(DRAFT)
+  submissionDate      DateTime?
+  decisionDate        DateTime?
+  notes               String?
+  createdByEmployeeId String                @db.Uuid
+  updatedByEmployeeId String?               @db.Uuid
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
+
+  tourist             Tourist               @relation(fields: [touristId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdByEmployee   Employee              @relation("VisaCreatedByEmployee", fields: [createdByEmployeeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  updatedByEmployee   Employee?             @relation("VisaUpdatedByEmployee", fields: [updatedByEmployeeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([touristId])
+  @@index([createdByEmployeeId])
+  @@index([updatedByEmployeeId])
 }

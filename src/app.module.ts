@@ -12,6 +12,7 @@ import { PassportsModule } from './modules/passports/passports.module';
 import { DestinationModule } from './modules/destination/destination.module';
 import { TripModule } from './modules/trip/trip.module';
 import { AssignmentModule } from './modules/assignment/assignment.module';
+import { VisaApplicationsModule } from './modules/visa-applications/visa-applications.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AssignmentModule } from './modules/assignment/assignment.module';
     DestinationModule,
     TripModule,
     AssignmentModule,
+    VisaApplicationsModule,
   ],
   providers: [
     {
