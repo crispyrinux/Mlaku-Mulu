@@ -9,6 +9,8 @@ import { CreateTouristDto } from './dto/create-tourist.dto';
 import { UpdateTouristDto } from './dto/update-tourist.dto';
 import { TouristQueryDto } from './dto/tourist-query.dto';
 import { Prisma } from '@prisma/client';
+import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
+import { toPaginatedResponse } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class TouristsService {
@@ -72,10 +74,12 @@ export class TouristsService {
     return this.toResponse(tourist);
   }
 
-  async findAll(query: TouristQueryDto) {
+  async findAll(query: TouristQueryDto): Promise<PaginatedResponse<any>> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const search = query.search?.trim();
+    const sortBy = query.sortBy ?? 'createdAt';
+    const sortOrder = query.sortOrder ?? 'desc';
 
     const where: Prisma.TouristWhereInput = {
       deletedAt: null,
@@ -84,20 +88,7 @@ export class TouristsService {
         ? {
             OR: [
               { fullName: { contains: search, mode: 'insensitive' as const } },
-              {
-                nationality: {
-                  contains: search,
-                  mode: 'insensitive' as const,
-                },
-              },
-              {
-                passport: {
-                  passportNumber: {
-                    contains: search,
-                    mode: 'insensitive' as const,
-                  },
-                },
-              },
+              { email: { contains: search, mode: 'insensitive' as const } },
             ],
           }
         : {}),
@@ -108,21 +99,14 @@ export class TouristsService {
       this.prisma.tourist.findMany({
         where,
         include: this.touristInclude,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
         skip: (page - 1) * limit,
         take: limit,
       }),
     ]);
 
-    return {
-      items: items.map((tourist) => this.toResponse(tourist)),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    const responseItems = items.map((tourist) => this.toResponse(tourist));
+    return toPaginatedResponse(responseItems, total, page, limit);
   }
 
   async findOne(id: string) {

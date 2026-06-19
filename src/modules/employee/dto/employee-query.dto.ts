@@ -1,29 +1,14 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
+import { IsIn, IsOptional } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class EmployeeQueryDto {
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
-  @IsOptional()
-  @IsString()
-  search?: string;
-
+export class EmployeeQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({
+    enum: ['id', 'fullName', 'email', 'createdAt', 'updatedAt'],
+    example: 'createdAt',
+    default: 'createdAt',
+  })
   @IsOptional()
   @IsIn(['id', 'fullName', 'email', 'createdAt', 'updatedAt'])
-  sortBy?: 'id' | 'fullName' | 'email' | 'createdAt' | 'updatedAt';
-
-  @IsOptional()
-  @IsIn(['asc', 'desc'])
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: 'id' | 'fullName' | 'email' | 'createdAt' | 'updatedAt' = 'createdAt';
 }

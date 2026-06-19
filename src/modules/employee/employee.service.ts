@@ -10,6 +10,8 @@ import { EmployeeQueryDto } from './dto/employee-query.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { EmployeeResponseDto } from './responses/employee-response.dto';
 import { Employee, Role, Gender } from '@prisma/client';
+import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
+import { toPaginatedResponse } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class EmployeeService {
@@ -70,16 +72,13 @@ export class EmployeeService {
     return this.toResponseDto(employee);
   }
 
-  async findAll(query: EmployeeQueryDto): Promise<{
-    items: EmployeeResponseDto[];
-    meta: { page: number; limit: number; total: number; totalPages: number };
-  }> {
+  async findAll(
+    query: EmployeeQueryDto,
+  ): Promise<PaginatedResponse<EmployeeResponseDto>> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const search = query.search?.trim();
-    const sortBy = this.sortableFields.has(query.sortBy ?? '')
-      ? query.sortBy!
-      : 'createdAt';
+    const sortBy = query.sortBy ?? 'createdAt';
     const sortOrder = query.sortOrder ?? 'desc';
 
     const where = {
@@ -102,15 +101,8 @@ export class EmployeeService {
       take: limit,
     });
 
-    return {
-      items: items.map((employee) => this.toResponseDto(employee)),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    const responseItems = items.map((employee) => this.toResponseDto(employee));
+    return toPaginatedResponse(responseItems, total, page, limit);
   }
 
   async update(

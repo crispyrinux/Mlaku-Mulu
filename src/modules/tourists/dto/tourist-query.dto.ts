@@ -1,31 +1,9 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
+import { IsEnum, IsIn, IsOptional } from 'class-validator';
 import { TouristStatus } from '@prisma/client';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class TouristQueryDto {
-  @ApiPropertyOptional({ example: 1, minimum: 1, default: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
-
-  @ApiPropertyOptional({ example: 10, minimum: 1, default: 10 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  limit?: number;
-
-  @ApiPropertyOptional({
-    description: 'Search by fullName, passportNumber, or nationality',
-    example: 'John',
-  })
-  @IsOptional()
-  @IsString()
-  search?: string;
-
+export class TouristQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     enum: TouristStatus,
     description: 'Filter by tourist status',
@@ -33,4 +11,13 @@ export class TouristQueryDto {
   @IsOptional()
   @IsEnum(TouristStatus)
   status?: TouristStatus;
+
+  @ApiPropertyOptional({
+    enum: ['id', 'fullName', 'createdAt', 'updatedAt'],
+    example: 'createdAt',
+    default: 'createdAt',
+  })
+  @IsOptional()
+  @IsIn(['id', 'fullName', 'createdAt', 'updatedAt'])
+  sortBy?: 'id' | 'fullName' | 'createdAt' | 'updatedAt' = 'createdAt';
 }
