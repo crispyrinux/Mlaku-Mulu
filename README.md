@@ -1,6 +1,6 @@
 # Tourism Management Backend
 
-A production-grade NestJS backend system built with Prisma ORM and PostgreSQL for managing tourists, passport details, and visa applications. The application implements secure JWT authentication, refresh token rotation, role-based database architecture, audit trails, soft deletes, and Swagger documentation.
+A production-grade NestJS backend system built with Prisma ORM and PostgreSQL for managing tourists, passport details, and visa applications. The application implements secure JWT authentication, refresh token rotation, global/route-specific rate limiting, secure Helmet headers, dynamic CORS, soft deletes, and Swagger documentation.
 
 ---
 
@@ -8,9 +8,27 @@ A production-grade NestJS backend system built with Prisma ORM and PostgreSQL fo
 
 * **JWT-Based Authentication**: Secure login flow for employees using access tokens (expiring in 15 minutes).
 * **Refresh Token Rotation**: Enhanced security via stateful refresh tokens stored in the database as cryptographically hashed values, rotated automatically on token refresh (expiring in 30 days).
-* **Role-Based Access Control (RBAC)**: Support for `SUPER_ADMIN`, `ADMIN`, and `STAFF` roles built into the database schema, with a ready-to-use `RolesGuard`.
-* **Tourist Management**: Comprehensive tourist profiling, including registration details and index search features.
-* **Passport Management**: Decoupled `1:1` relationship linking passport details to tourists, ensuring data integrity and uniqueness of passport numbers.
+* **Global & Route-Specific Rate Limiting**: Standard rate limiting applied globally (default 100 requests / minute) with stricter overrides on login and refresh endpoints (5 attempts / minute) using `@nestjs/throttler`.
+* **Helmet Security Headers**: Production-grade HTTP headers applied globally (defaults for X-Content-Type-Options, X-Frame-Options, Referrer-Policy, etc.).
+* **CORS Hardening**: Strict, environment-driven origin mapping supporting multiple origins. Defaults to safe localhost values for local development.
+* **Standardized Pagination, Search, Filtering & Sorting**:
+  * Shared `PaginationQueryDto` class for clean query parameters validation.
+  * Reusable pagination utility mapping query results to standard response wrappers:
+    ```json
+    {
+      "success": true,
+      "data": [...],
+      "meta": {
+        "page": 1,
+        "limit": 10,
+        "total": 100,
+        "totalPages": 10
+      }
+    }
+    ```
+  * Case-insensitive queries for Employee and Tourist text searches.
+  * Explicit sorting filters (`sortBy`, `sortOrder` defaulting to `createdAt desc`).
+  * Tourist status filtering based on the `ACTIVE` | `INACTIVE` | `BLACKLISTED` state.
 * **Visa Application Module**: State-machine-driven visa workflow:
   * Transitions: `DRAFT` &rarr; `SUBMITTED` &rarr; `IN_REVIEW` &rarr; `APPROVED`/`REJECTED`/`CANCELLED`.
   * Unique application numbers generated sequentially per calendar year (`VA-YYYY-000001`).
@@ -18,7 +36,7 @@ A production-grade NestJS backend system built with Prisma ORM and PostgreSQL fo
   * Modification limits restricted exclusively to the `DRAFT` status.
 * **Soft Delete Logic**: Safety measure preventing permanent records deletion on critical entities (`Employee`, `Tourist`, `VisaApplication`).
 * **Audit Trail**: Tracking creation and update logs of tourists and visa applications by capturing responsible employee IDs (`createdByEmployeeId`, `updatedByEmployeeId`).
-* **Global Error Filter**: Standardized JSON responses for validation and database-level exception mappings.
+* **Global Exception Filters**: Custom filters intercepting database exceptions (Prisma errors) and rate limiting violations (`ThrottlerException`) to return consistent, user-friendly JSON payloads.
 
 ---
 
@@ -30,10 +48,12 @@ A production-grade NestJS backend system built with Prisma ORM and PostgreSQL fo
 | **Prisma ORM** | Type-safe database access, mapping, and migrations |
 | **PostgreSQL** | Relational database storage |
 | **Passport & JWT** | Secure authentication and credentials verification |
+| **Throttler** | Global and route-specific request rate limiting |
+| **Helmet** | HTTP security headers decoration |
 | **Swagger** | Interactive API documentation and sandboxed testing |
 | **Bcrypt** | Secure hashing algorithm for passwords and refresh tokens |
 | **Class Validator & Transformer** | Runtime DTO validation and request transformation |
-| **Helmet & Compression** | Security headers decoration and HTTP response payload compression |
+| **Compression** | HTTP response payload compression |
 | **Joi** | Environment configuration variables validation |
 
 ---
@@ -43,10 +63,13 @@ A production-grade NestJS backend system built with Prisma ORM and PostgreSQL fo
 ```text
 src/
 ├── common/
-│   ├── exceptions/      # PrismaExceptionFilter for database error mappings
-│   └── security/        # Cryptographic password hashing helper service
+│   ├── dto/             # Base PaginationQueryDto for validation inheritance
+│   ├── exceptions/      # PrismaExceptionFilter and ThrottlerExceptionFilter
+│   ├── interfaces/      # PaginatedResponse<T> interface layout
+│   ├── security/        # Cryptographic password hashing helper service
+│   └── utils/           # pagination.util.ts helper functions
 ├── config/
-│   ├── app.config.ts    # Application runtime configs
+│   ├── app.config.ts    # Application runtime configs including throttle & CORS origins
 │   ├── env.validation.t # Environment variables Joi validation schema
 │   ├── jwt.config.ts    # JWT token expiration and secret settings
 │   └── swagger.config.t # Swagger UI configurations
@@ -68,7 +91,7 @@ src/
 ## Domain Modules
 
 ### Auth Module
-* **Responsibilities**: Handles employee login, logout, profile discovery (`/me`), and secure token refreshing. Implements refresh token database revocation and rotation checks.
+* **Responsibilities**: Handles employee login, logout, profile discovery (`/me`), and secure token refreshing. Implements refresh token database revocation and rotation checks. Strict rate limit applied (5 attempts / minute).
 * **Endpoints**:
   * `POST /auth/login`
   * `POST /auth/refresh`
@@ -76,7 +99,7 @@ src/
   * `GET /auth/me`
 
 ### Employee Module
-* **Responsibilities**: Facilitates employee profile updates, lists, and metadata modifications by super admins.
+* **Responsibilities**: Facilitates employee profile updates, lists, and metadata modifications by super admins. Exposes paginated and sorted query results.
 * **Endpoints**:
   * `POST /employees`
   * `GET /employees`
@@ -85,7 +108,7 @@ src/
   * `DELETE /employees/:id`
 
 ### Tourists Module
-* **Responsibilities**: Manages tourist profiles. On tourist creation, creates a nested passport record in a single transaction. Supports soft deletes.
+* **Responsibilities**: Manages tourist profiles. On tourist creation, creates a nested passport record in a single transaction. Exposes paginated list results supporting sorting, text search, and status filtering.
 * **Endpoints**:
   * `POST /tourists`
   * `GET /tourists`
@@ -101,7 +124,7 @@ src/
   * `PATCH /passports/:id`
 
 ### Visa Applications Module
-* **Responsibilities**: Controls the primary business process. Generates application numbers, manages state transitions, and enforces audit constraints.
+* **Responsibilities**: Controls the primary business process. Generates application numbers, manages state transitions, and enforces audit constraints. Exposes paginated query results with status/country filtering.
 * **Endpoints**:
   * `POST /api/v1/visa-applications`
   * `GET /api/v1/visa-applications`
@@ -238,7 +261,7 @@ erDiagram
   [ Employee Credentials ]
             │
             ▼
-    POST /auth/login
+    POST /auth/login  <─── [Rate Limit: 5 requests / min]
             │
   ┌─────────┴─────────┐
   ▼                   ▼
@@ -268,31 +291,31 @@ When access tokens expire (15 min), clients call `/auth/refresh` sending the raw
 
 All routes are protected by the `JwtAuthGuard` except public endpoints. The codebase has a defined `RolesGuard` mapping `SUPER_ADMIN`, `ADMIN`, and `STAFF` roles.
 
-| Endpoint | Authentication | Allowed Roles (System Roles) |
-| -------- | -------------- | ------------- |
-| `POST /auth/login` | Public | Anyone |
-| `POST /auth/refresh` | Public | Anyone |
-| `POST /auth/logout` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /auth/me` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /employees` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /employees` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /employees/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /employees/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `DELETE /employees/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /tourists` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /tourists` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /tourists/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /tourists/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `DELETE /tourists/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /passports` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /passports/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /passports/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /api/v1/visa-applications` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /api/v1/visa-applications` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /api/v1/visa-applications/:id`| JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /api/v1/visa-applications/:id`| JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `DELETE /api/v1/visa-applications/:id`| JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /api/v1/visa-applications/:id/status`| JWT Bearer| `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| Endpoint | Authentication | Rate Limit | Allowed Roles |
+| -------- | -------------- | ---------- | ------------- |
+| `POST /auth/login` | Public | 5 req / min | Anyone |
+| `POST /auth/refresh` | Public | 5 req / min | Anyone |
+| `POST /auth/logout` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /auth/me` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /employees` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /employees` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /employees/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /employees/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `DELETE /employees/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /tourists` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /tourists` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /tourists/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /tourists/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `DELETE /tourists/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /passports` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /passports/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /passports/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /api/v1/visa-applications` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /api/v1/visa-applications` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `DELETE /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /api/v1/visa-applications/:id/status`| JWT Bearer| 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
 
 ---
 
@@ -396,14 +419,15 @@ All routes are protected by the `JwtAuthGuard` except public endpoints. The code
 * **Description**: Returns a paginated and searchable list of employees.
 * **Query Parameters**:
   * `page` (optional, default: `1`)
-  * `limit` (optional, default: `10`)
-  * `search` (optional, matches fullName/email)
-  * `sortBy` (optional, matches field properties, default: `createdAt`)
+  * `limit` (optional, default: `10`, max: `100`)
+  * `search` (optional, matches fullName/email case-insensitively)
+  * `sortBy` (optional, allowed: `id` | `fullName` | `email` | `createdAt` | `updatedAt`, default: `createdAt`)
   * `sortOrder` (optional, `asc` | `desc`, default: `desc`)
 * **Response**:
   ```json
   {
-    "items": [ ... ],
+    "success": true,
+    "data": [ ... ],
     "meta": {
       "page": 1,
       "limit": 10,
@@ -482,13 +506,27 @@ All routes are protected by the `JwtAuthGuard` except public endpoints. The code
   ```
 
 #### GET /tourists
-* **Description**: Returns paginated tourists. Includes passport details.
+* **Description**: Returns paginated, searchable, and filterable list of tourists.
 * **Query Parameters**:
-  * `page` (optional)
-  * `limit` (optional)
-  * `search` (optional, checks fullName, nationality, or passportNumber)
-  * `status` (optional, `ACTIVE` | `INACTIVE` | `BLACKLISTED`)
-* **Response**: Paginated items with metadata.
+  * `page` (optional, default: `1`)
+  * `limit` (optional, default: `10`, max: `100`)
+  * `search` (optional, matches fullName/email case-insensitively)
+  * `status` (optional, filter by status `ACTIVE` | `INACTIVE` | `BLACKLISTED`)
+  * `sortBy` (optional, allowed: `id` | `fullName` | `createdAt` | `updatedAt`, default: `createdAt`)
+  * `sortOrder` (optional, `asc` | `desc`, default: `desc`)
+* **Response**:
+  ```json
+  {
+    "success": true,
+    "data": [ ... ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "total": 1,
+      "totalPages": 1
+    }
+  }
+  ```
 
 #### GET /tourists/:id
 * **Description**: Gets tourist details with passport.
@@ -632,6 +670,10 @@ The system requires the following environment variables to run. Validation is pe
 | `JWT_ACCESS_EXPIRES_IN` | Yes | Expiry duration for access tokens (e.g., `15m`) |
 | `JWT_REFRESH_SECRET` | Yes | Signing secret key for JWT refresh tokens |
 | `JWT_REFRESH_EXPIRES_IN` | Yes | Expiry duration for refresh tokens (e.g., `30d`) |
+| `CORS_ORIGIN` | No | Comma-separated list of allowed origins (defaults to dev localhost origins) |
+| `THROTTLE_TTL` | No | Time-to-live window in milliseconds for rate limits (default: `60000`) |
+| `THROTTLE_LIMIT` | No | Request threshold count within TTL window (default: `100`) |
+| `ENABLE_SWAGGER` | No | Boolean toggle control for exposing Swagger UI (default: `false`) |
 
 ---
 
@@ -699,26 +741,29 @@ Use the following commands to spin up PostgreSQL containers defined in the setup
 
 ## Swagger
 
-Interactive API Swagger documentation is generated automatically on server launch. You can access the interface, inspect DTO schemas, and try out requests directly:
+Interactive API Swagger documentation is generated automatically on server launch in environments where it is enabled:
 
 * **Swagger URL**: `http://localhost:<PORT>/api/docs` (default: `http://localhost:3000/api/docs`)
+* **Enable Flag**: Set `ENABLE_SWAGGER=true` in environment variables.
 
 ---
 
 ## Security Features
 
-* **Cryptographic Hashing**: Employee passwords are encrypted using Bcrypt prior to storage.
+* **Cryptographic Password Hashing**: Employee passwords are encrypted using Bcrypt prior to storage.
 * **Token Hashing**: Refresh tokens are cryptographically hashed using Bcrypt before DB insertions to prevent compromise in case of database leaks.
 * **Refresh Token Rotation (RTR)**: Stateful token verification that revokes previous tokens and prevents token replay attacks.
+* **Global Rate Limiting**: Limit API abuse to a default of 100 requests per minute.
+* **Route Rate Limiting**: Stricter 5 attempts per minute rate limit applied to authentication paths (`/auth/login` and `/auth/refresh`).
+* **CORS Hardening**: Strict, non-wildcard CORS config configured via allowed-origin list.
+* **Helmet Security Headers**: Integrated Helmet middleware to add secure headers (CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy).
 * **Request Validation**: Validation pipes mapping decorators (`class-validator`) reject invalid inputs before routes process them.
-* **Security Headers**: Integrated Helmet middleware to add secure headers (CSP, HSTS, X-Frame-Options).
-* **CORS & Compression**: Standard Express CORS configuration and Gzip payload compression.
 
 ---
 
 ## Error Response Format
 
-Unhandled system and database exceptions are mapped to consistent client formats via the `PrismaExceptionFilter` and NestJS's built-in filters.
+Unhandled system, database, and rate limiting exceptions are mapped to consistent client formats via exception filters.
 
 ### Conflict Exception Example (P2002 Unique Constraint)
 ```json
@@ -730,13 +775,12 @@ Unhandled system and database exceptions are mapped to consistent client formats
 }
 ```
 
-### Not Found Exception Example (P2025 Resource Missing)
+### Rate Limit Exception Example (Too Many Requests)
 ```json
 {
-  "statusCode": 404,
-  "timestamp": "2026-06-19T07:25:10.000Z",
-  "path": "/api/v1/visa-applications/some-uuid",
-  "message": "Requested resource was not found"
+  "success": false,
+  "message": "Too many requests",
+  "statusCode": 429
 }
 ```
 
