@@ -19,19 +19,23 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { PassportsService } from './passports.service';
 import { CreatePassportDto } from './dto/create-passport.dto';
 import { UpdatePassportDto } from './dto/update-passport.dto';
 
 @ApiTags('Passports')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('passports')
 export class PassportsController {
   constructor(private readonly passportsService: PassportsService) {}
 
   @Post()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a passport for a tourist' })
   @ApiBody({ type: CreatePassportDto })
@@ -42,6 +46,7 @@ export class PassportsController {
   }
 
   @Get(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get passport detail with tourist summary' })
   @ApiOkResponse({ description: 'Passport detail' })
@@ -51,6 +56,7 @@ export class PassportsController {
   }
 
   @Patch(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update passport (passport number cannot be changed)' })
   @ApiBody({ type: UpdatePassportDto })

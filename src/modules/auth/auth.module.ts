@@ -8,7 +8,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { RolesGuard } from './guards/roles.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({

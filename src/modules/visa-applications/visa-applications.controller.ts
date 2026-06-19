@@ -23,7 +23,10 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import * as Prisma from '@prisma/client';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { VisaApplicationsService } from './visa-applications.service';
 import { CreateVisaApplicationDto } from './dto/create-visa-application.dto';
@@ -33,7 +36,7 @@ import { UpdateVisaApplicationStatusDto } from './dto/update-visa-application-st
 
 @ApiTags('Visa Applications')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('api/v1/visa-applications')
 export class VisaApplicationsController {
   constructor(
@@ -41,6 +44,7 @@ export class VisaApplicationsController {
   ) {}
 
   @Post()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new visa application' })
   @ApiBody({ type: CreateVisaApplicationDto })
@@ -54,6 +58,7 @@ export class VisaApplicationsController {
   }
 
   @Get()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get paginated list of visa applications' })
   @ApiOkResponse({ description: 'Paginated list of visa applications' })
@@ -63,6 +68,7 @@ export class VisaApplicationsController {
   }
 
   @Get(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get visa application detail by ID' })
   @ApiOkResponse({ description: 'Visa application detail (includes tourist and passport)' })
@@ -72,6 +78,7 @@ export class VisaApplicationsController {
   }
 
   @Patch(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update visa application (only allowed in DRAFT status)' })
   @ApiBody({ type: UpdateVisaApplicationDto })
@@ -86,6 +93,7 @@ export class VisaApplicationsController {
   }
 
   @Delete(':id')
+  @Roles(Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft delete a visa application' })
   @ApiNoContentResponse({ description: 'Visa application deleted successfully' })
@@ -95,6 +103,7 @@ export class VisaApplicationsController {
   }
 
   @Patch(':id/status')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Change the status of a visa application' })
   @ApiBody({ type: UpdateVisaApplicationStatusDto })

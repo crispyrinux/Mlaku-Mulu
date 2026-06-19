@@ -11,9 +11,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { TouristsModule } from './modules/tourists/tourists.module';
 import { PassportsModule } from './modules/passports/passports.module';
-import { DestinationModule } from './modules/destination/destination.module';
-import { TripModule } from './modules/trip/trip.module';
-import { AssignmentModule } from './modules/assignment/assignment.module';
+import { DestinationsModule } from './modules/destinations/destinations.module';
+import { TripsModule } from './modules/trips/trips.module';
+import { AssignmentsModule } from './modules/assignments/assignments.module';
 import { VisaApplicationsModule } from './modules/visa-applications/visa-applications.module';
 
 @Module({
@@ -38,9 +38,9 @@ import { VisaApplicationsModule } from './modules/visa-applications/visa-applica
     EmployeeModule,
     TouristsModule,
     PassportsModule,
-    DestinationModule,
-    TripModule,
-    AssignmentModule,
+    DestinationsModule,
+    TripsModule,
+    AssignmentsModule,
     VisaApplicationsModule,
   ],
   providers: [

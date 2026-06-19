@@ -16,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -23,7 +24,10 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import * as Prisma from '@prisma/client';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TouristsService } from './tourists.service';
 import { CreateTouristDto } from './dto/create-tourist.dto';
@@ -32,12 +36,13 @@ import { TouristQueryDto } from './dto/tourist-query.dto';
 
 @ApiTags('Tourists')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('tourists')
 export class TouristsController {
   constructor(private readonly touristsService: TouristsService) {}
 
   @Post()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new tourist' })
   @ApiBody({ type: CreateTouristDto })
@@ -51,6 +56,7 @@ export class TouristsController {
   }
 
   @Get()
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get paginated list of tourists' })
   @ApiOkResponse({ description: 'Paginated list of tourists' })
@@ -60,6 +66,7 @@ export class TouristsController {
   }
 
   @Get(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get tourist detail by ID' })
   @ApiOkResponse({ description: 'Tourist detail' })
@@ -69,6 +76,7 @@ export class TouristsController {
   }
 
   @Patch(':id')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update tourist (passport managed separately)' })
   @ApiBody({ type: UpdateTouristDto })
@@ -83,6 +91,7 @@ export class TouristsController {
   }
 
   @Delete(':id')
+  @Roles(Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft delete a tourist' })
   @ApiNoContentResponse({ description: 'Tourist deleted successfully' })
