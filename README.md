@@ -1,98 +1,773 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Tourism Management Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-grade NestJS backend system built with Prisma ORM and PostgreSQL for managing tourists, passport details, and visa applications. The application implements secure JWT authentication, refresh token rotation, role-based database architecture, audit trails, soft deletes, and Swagger documentation.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Features
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+* **JWT-Based Authentication**: Secure login flow for employees using access tokens (expiring in 15 minutes).
+* **Refresh Token Rotation**: Enhanced security via stateful refresh tokens stored in the database as cryptographically hashed values, rotated automatically on token refresh (expiring in 30 days).
+* **Role-Based Access Control (RBAC)**: Support for `SUPER_ADMIN`, `ADMIN`, and `STAFF` roles built into the database schema, with a ready-to-use `RolesGuard`.
+* **Tourist Management**: Comprehensive tourist profiling, including registration details and index search features.
+* **Passport Management**: Decoupled `1:1` relationship linking passport details to tourists, ensuring data integrity and uniqueness of passport numbers.
+* **Visa Application Module**: State-machine-driven visa workflow:
+  * Transitions: `DRAFT` &rarr; `SUBMITTED` &rarr; `IN_REVIEW` &rarr; `APPROVED`/`REJECTED`/`CANCELLED`.
+  * Unique application numbers generated sequentially per calendar year (`VA-YYYY-000001`).
+  * Automatic timestamps for submission and decision events.
+  * Modification limits restricted exclusively to the `DRAFT` status.
+* **Soft Delete Logic**: Safety measure preventing permanent records deletion on critical entities (`Employee`, `Tourist`, `VisaApplication`).
+* **Audit Trail**: Tracking creation and update logs of tourists and visa applications by capturing responsible employee IDs (`createdByEmployeeId`, `updatedByEmployeeId`).
+* **Global Error Filter**: Standardized JSON responses for validation and database-level exception mappings.
 
-## Project setup
+---
 
-```bash
-$ npm install
+## Tech Stack
+
+| Technology | Purpose |
+| ---------- | ------- |
+| **NestJS** | Framework for scalable, modular server-side applications |
+| **Prisma ORM** | Type-safe database access, mapping, and migrations |
+| **PostgreSQL** | Relational database storage |
+| **Passport & JWT** | Secure authentication and credentials verification |
+| **Swagger** | Interactive API documentation and sandboxed testing |
+| **Bcrypt** | Secure hashing algorithm for passwords and refresh tokens |
+| **Class Validator & Transformer** | Runtime DTO validation and request transformation |
+| **Helmet & Compression** | Security headers decoration and HTTP response payload compression |
+| **Joi** | Environment configuration variables validation |
+
+---
+
+## Project Structure
+
+```text
+src/
+├── common/
+│   ├── exceptions/      # PrismaExceptionFilter for database error mappings
+│   └── security/        # Cryptographic password hashing helper service
+├── config/
+│   ├── app.config.ts    # Application runtime configs
+│   ├── env.validation.t # Environment variables Joi validation schema
+│   ├── jwt.config.ts    # JWT token expiration and secret settings
+│   └── swagger.config.t # Swagger UI configurations
+├── modules/
+│   ├── auth/            # Auth controllers, login, guards, strategies, and decorators
+│   ├── employee/        # Employee management endpoints and database entities
+│   ├── tourists/        # Tourist profiles and management endpoints
+│   ├── passports/       # Decoupled passport details (1:1 with Tourist)
+│   ├── visa-applications/ # Core visa application workflow and query handlers
+│   ├── destination/     # Skeleton module for destination management (future roadmap)
+│   ├── trip/            # Skeleton module for trip scheduling (future roadmap)
+│   └── assignment/      # Skeleton module for tourist assignment (future roadmap)
+├── app.module.ts        # Main application module registering config and submodules
+└── main.ts              # Entry point starting the NestJS HTTP server
 ```
 
-## Compile and run the project
+---
 
+## Domain Modules
+
+### Auth Module
+* **Responsibilities**: Handles employee login, logout, profile discovery (`/me`), and secure token refreshing. Implements refresh token database revocation and rotation checks.
+* **Endpoints**:
+  * `POST /auth/login`
+  * `POST /auth/refresh`
+  * `POST /auth/logout`
+  * `GET /auth/me`
+
+### Employee Module
+* **Responsibilities**: Facilitates employee profile updates, lists, and metadata modifications by super admins.
+* **Endpoints**:
+  * `POST /employees`
+  * `GET /employees`
+  * `GET /employees/:id`
+  * `PATCH /employees/:id`
+  * `DELETE /employees/:id`
+
+### Tourists Module
+* **Responsibilities**: Manages tourist profiles. On tourist creation, creates a nested passport record in a single transaction. Supports soft deletes.
+* **Endpoints**:
+  * `POST /tourists`
+  * `GET /tourists`
+  * `GET /tourists/:id`
+  * `PATCH /tourists/:id`
+  * `DELETE /tourists/:id`
+
+### Passports Module
+* **Responsibilities**: Handles decoupled passport metadata updates (issue dates, expiry, place of issue) separate from the tourist entity.
+* **Endpoints**:
+  * `POST /passports`
+  * `GET /passports/:id`
+  * `PATCH /passports/:id`
+
+### Visa Applications Module
+* **Responsibilities**: Controls the primary business process. Generates application numbers, manages state transitions, and enforces audit constraints.
+* **Endpoints**:
+  * `POST /api/v1/visa-applications`
+  * `GET /api/v1/visa-applications`
+  * `GET /api/v1/visa-applications/:id`
+  * `PATCH /api/v1/visa-applications/:id`
+  * `DELETE /api/v1/visa-applications/:id`
+  * `PATCH /api/v1/visa-applications/:id/status`
+
+---
+
+## Database Design
+
+```mermaid
+erDiagram
+    Employee ||--o{ RefreshToken : has
+    Employee ||--o{ Tourist : creates
+    Employee ||--o{ Tourist : updates
+    Employee ||--o{ VisaApplication : creates
+    Employee ||--o{ VisaApplication : updates
+    Tourist ||--|| Passport : has
+    Tourist ||--o{ VisaApplication : applies
+    
+    Employee {
+        uuid id PK
+        string fullName
+        string email UK
+        string password
+        Role role
+        datetime birthDate
+        Gender gender
+        string nationality
+        string passportNumber
+        boolean isActive
+        datetime createdAt
+        datetime updatedAt
+        datetime deletedAt
+    }
+    
+    RefreshToken {
+        uuid id PK
+        string tokenHash
+        uuid employeeId FK
+        datetime expiresAt
+        datetime revokedAt
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Tourist {
+        uuid id PK
+        string fullName
+        datetime birthDate
+        Gender gender
+        string nationality
+        string email
+        string phone
+        string notes
+        TouristStatus status
+        uuid createdByEmployeeId FK
+        uuid updatedByEmployeeId FK
+        datetime createdAt
+        datetime updatedAt
+        datetime deletedAt
+    }
+    
+    Passport {
+        uuid id PK
+        uuid touristId FK UK
+        string passportNumber UK
+        datetime issueDate
+        datetime expiryDate
+        string placeOfIssue
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    VisaApplication {
+        uuid id PK
+        string applicationNumber UK
+        uuid touristId FK
+        string country
+        string visaType
+        VisaApplicationStatus status
+        datetime submissionDate
+        datetime decisionDate
+        string notes
+        uuid createdByEmployeeId FK
+        uuid updatedByEmployeeId FK
+        datetime createdAt
+        datetime updatedAt
+        datetime deletedAt
+    }
+```
+
+### Entities
+
+#### Employee
+* **Purpose**: Represents system users (Staff, Admins, Super Admins).
+* **Important fields**: `email` (unique), `password` (hashed), `role` (`SUPER_ADMIN`, `ADMIN`, `STAFF`).
+* **Relationships**:
+  * Has many `refreshTokens`.
+  * Has many `createdTourists` and `updatedTourists`.
+  * Has many `createdVisaApplications` and `updatedVisaApplications`.
+
+#### Tourist
+* **Purpose**: Represents clients booking travel and applying for visas.
+* **Important fields**: `fullName`, `status` (`ACTIVE`, `INACTIVE`, `BLACKLISTED`), `createdByEmployeeId`.
+* **Relationships**:
+  * Has one `passport` (`1:1`).
+  * Has many `visaApplications` (`1:N`).
+
+#### Passport
+* **Purpose**: Decoupled travel document details.
+* **Important fields**: `passportNumber` (unique), `touristId` (unique).
+* **Relationships**:
+  * Belongs to a single `tourist`.
+
+#### VisaApplication
+* **Purpose**: Tracks travel authorization processes.
+* **Important fields**: `applicationNumber` (unique, generated), `status` (`DRAFT`, `SUBMITTED`, `IN_REVIEW`, `APPROVED`, `REJECTED`, `CANCELLED`).
+* **Relationships**:
+  * Belongs to a `tourist`.
+  * Created and updated by `employee`.
+
+#### RefreshToken
+* **Purpose**: Tracks valid active sessions for Token Rotation.
+* **Important fields**: `tokenHash` (cryptographically hashed), `employeeId`, `expiresAt`, `revokedAt`.
+
+---
+
+## Authentication Flow
+
+```text
+  [ Employee Credentials ]
+            │
+            ▼
+    POST /auth/login
+            │
+  ┌─────────┴─────────┐
+  ▼                   ▼
+[ 200 OK ]      [ 401 Unauthorized ]
+  │                   │
+  ├──► Access Token   └──► "Invalid credentials"
+  └──► Refresh Token
+            │
+  (Used for access)
+            │
+            ▼
+    Protected APIs (Authorization Bearer <JWT>)
+```
+
+### Refresh Token Rotation (RTR)
+When access tokens expire (15 min), clients call `/auth/refresh` sending the raw refresh token:
+1. System validates the token signature and expiration.
+2. Compares hashed input token with database logs.
+3. Revokes the old refresh token (`revokedAt = now()`).
+4. Generates a new access token and a new refresh token.
+5. Persists the new refresh token hash and returns both tokens.
+6. Re-using a revoked token invalidates the entire active session to block token theft.
+
+---
+
+## Authorization
+
+All routes are protected by the `JwtAuthGuard` except public endpoints. The codebase has a defined `RolesGuard` mapping `SUPER_ADMIN`, `ADMIN`, and `STAFF` roles.
+
+| Endpoint | Authentication | Allowed Roles (System Roles) |
+| -------- | -------------- | ------------- |
+| `POST /auth/login` | Public | Anyone |
+| `POST /auth/refresh` | Public | Anyone |
+| `POST /auth/logout` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /auth/me` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /employees` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /employees` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /employees/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /employees/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `DELETE /employees/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /tourists` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /tourists` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /tourists/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /tourists/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `DELETE /tourists/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /passports` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /passports/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /passports/:id` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /api/v1/visa-applications` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /api/v1/visa-applications` | JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /api/v1/visa-applications/:id`| JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /api/v1/visa-applications/:id`| JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `DELETE /api/v1/visa-applications/:id`| JWT Bearer | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /api/v1/visa-applications/:id/status`| JWT Bearer| `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+
+---
+
+## API Endpoints
+
+### Auth
+
+#### POST /auth/login
+* **Description**: Logs in an employee and returns JWT access & refresh tokens.
+* **Request**:
+  ```json
+  {
+    "email": "admin@example.com",
+    "password": "password123"
+  }
+  ```
+* **Response**:
+  ```json
+  {
+    "accessToken": "eyJhbGciOi...",
+    "refreshToken": "a1b2c3d4..."
+  }
+  ```
+
+#### POST /auth/refresh
+* **Description**: Rotates the current refresh token and returns a new token pair.
+* **Request**:
+  ```json
+  {
+    "refreshToken": "a1b2c3d4..."
+  }
+  ```
+* **Response**:
+  ```json
+  {
+    "accessToken": "eyJhbGciOi...",
+    "refreshToken": "f5e4d3c2..."
+  }
+  ```
+
+#### POST /auth/logout
+* **Description**: Revokes all refresh tokens linked to the user session.
+* **Request**: Empty body (bearer token header required).
+* **Response**: `204 No Content`
+
+#### GET /auth/me
+* **Description**: Retrieves current logged-in employee profile.
+* **Response**:
+  ```json
+  {
+    "id": "c1611a91-4d33-4bb4-ac81-ec0e02613cfb",
+    "fullName": "System Admin",
+    "email": "admin@example.com",
+    "role": "SUPER_ADMIN",
+    "birthDate": "1990-01-01T00:00:00.000Z",
+    "gender": "MALE",
+    "nationality": "Indonesian",
+    "passportNumber": "X1234567",
+    "isActive": true,
+    "createdAt": "2026-06-19T00:00:00.000Z",
+    "updatedAt": "2026-06-19T00:00:00.000Z"
+  }
+  ```
+
+---
+
+### Employees
+
+#### POST /employees
+* **Description**: Creates a new employee profile (default role `STAFF`).
+* **Request**:
+  ```json
+  {
+    "fullName": "Jane Doe",
+    "email": "jane@example.com",
+    "password": "securePassword123",
+    "birthDate": "1995-08-20",
+    "gender": "FEMALE",
+    "nationality": "Singaporean",
+    "passportNumber": "Y7654321"
+  }
+  ```
+* **Response**:
+  ```json
+  {
+    "id": "c76b9e28-dfcd-40a2-9fa9-4458d9bb5e9b",
+    "fullName": "Jane Doe",
+    "email": "jane@example.com",
+    "role": "STAFF",
+    "birthDate": "1995-08-20T00:00:00.000Z",
+    "gender": "FEMALE",
+    "nationality": "Singaporean",
+    "passportNumber": "Y7654321",
+    "isActive": true,
+    "createdAt": "2026-06-19T07:22:00.000Z",
+    "updatedAt": "2026-06-19T07:22:00.000Z"
+  }
+  ```
+
+#### GET /employees
+* **Description**: Returns a paginated and searchable list of employees.
+* **Query Parameters**:
+  * `page` (optional, default: `1`)
+  * `limit` (optional, default: `10`)
+  * `search` (optional, matches fullName/email)
+  * `sortBy` (optional, matches field properties, default: `createdAt`)
+  * `sortOrder` (optional, `asc` | `desc`, default: `desc`)
+* **Response**:
+  ```json
+  {
+    "items": [ ... ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "total": 1,
+      "totalPages": 1
+    }
+  }
+  ```
+
+#### GET /employees/:id
+* **Description**: Gets employee details by UUID.
+* **Response**: Same as `POST /employees` body response.
+
+#### PATCH /employees/:id
+* **Description**: Updates profile details for an employee.
+* **Request**: Any fields from `POST /employees` body (optional).
+* **Response**: Updated employee details.
+
+#### DELETE /employees/:id
+* **Description**: Soft deletes employee profile by setting `deletedAt`.
+* **Response**: `204 No Content`
+
+---
+
+### Tourists
+
+#### POST /tourists
+* **Description**: Registers a tourist and links a passport in a single transaction.
+* **Request**:
+  ```json
+  {
+    "fullName": "John Doe",
+    "birthDate": "1990-05-15",
+    "gender": "MALE",
+    "nationality": "United States",
+    "email": "john.doe@example.com",
+    "phone": "+1234567890",
+    "notes": "VIP guest",
+    "passport": {
+      "passportNumber": "A12345678",
+      "issueDate": "2020-01-15",
+      "expiryDate": "2030-01-15",
+      "placeOfIssue": "New York, USA"
+    }
+  }
+  ```
+* **Response**:
+  ```json
+  {
+    "id": "d052b618-910f-4886-8d69-5a1e27a6949b",
+    "fullName": "John Doe",
+    "birthDate": "1990-05-15T00:00:00.000Z",
+    "gender": "MALE",
+    "nationality": "United States",
+    "email": "john.doe@example.com",
+    "phone": "+1234567890",
+    "notes": "VIP guest",
+    "status": "ACTIVE",
+    "createdAt": "2026-06-19T07:23:00.000Z",
+    "updatedAt": "2026-06-19T07:23:00.000Z",
+    "createdByEmployeeId": "c1611a91-4d33-4bb4-ac81-ec0e02613cfb",
+    "updatedByEmployeeId": null,
+    "createdByEmployee": { "id": "...", "fullName": "..." },
+    "updatedByEmployee": null,
+    "passport": {
+      "id": "f5165991-5a02-4742-a279-3e3e098df11a",
+      "touristId": "d052b618-910f-4886-8d69-5a1e27a6949b",
+      "passportNumber": "A12345678",
+      "issueDate": "2020-01-15T00:00:00.000Z",
+      "expiryDate": "2030-01-15T00:00:00.000Z",
+      "placeOfIssue": "New York, USA",
+      "createdAt": "2026-06-19T07:23:00.000Z",
+      "updatedAt": "2026-06-19T07:23:00.000Z"
+    }
+  }
+  ```
+
+#### GET /tourists
+* **Description**: Returns paginated tourists. Includes passport details.
+* **Query Parameters**:
+  * `page` (optional)
+  * `limit` (optional)
+  * `search` (optional, checks fullName, nationality, or passportNumber)
+  * `status` (optional, `ACTIVE` | `INACTIVE` | `BLACKLISTED`)
+* **Response**: Paginated items with metadata.
+
+#### GET /tourists/:id
+* **Description**: Gets tourist details with passport.
+* **Response**: Same as `POST /tourists` response.
+
+#### PATCH /tourists/:id
+* **Description**: Updates profile details (excludes passport edits).
+* **Request**:
+  ```json
+  {
+    "fullName": "John Jonathan Doe",
+    "status": "INACTIVE"
+  }
+  ```
+* **Response**: Updated tourist object.
+
+#### DELETE /tourists/:id
+* **Description**: Soft deletes the tourist record.
+* **Response**: `204 No Content`
+
+---
+
+### Passports
+
+#### POST /passports
+* **Description**: Links passport information to an existing tourist.
+* **Request**:
+  ```json
+  {
+    "touristId": "d052b618-910f-4886-8d69-5a1e27a6949b",
+    "passportNumber": "B98765432",
+    "issueDate": "2021-05-10",
+    "expiryDate": "2031-05-10",
+    "placeOfIssue": "Chicago, USA"
+  }
+  ```
+* **Response**: Created passport details.
+
+#### GET /passports/:id
+* **Description**: Returns passport details with tourist summary.
+* **Response**: Passport details with nested tourist owner data.
+
+#### PATCH /passports/:id
+* **Description**: Updates details of passport (passport number cannot be changed).
+* **Request**:
+  ```json
+  {
+    "placeOfIssue": "Washington DC, USA"
+  }
+  ```
+* **Response**: Updated passport object.
+
+---
+
+### Visa Applications
+
+#### POST /api/v1/visa-applications
+* **Description**: Creates a new application. Initial status is `DRAFT`.
+* **Request**:
+  ```json
+  {
+    "touristId": "d052b618-910f-4886-8d69-5a1e27a6949b",
+    "country": "Japan",
+    "visaType": "Tourist",
+    "notes": "First time visit"
+  }
+  ```
+* **Response**:
+  ```json
+  {
+    "id": "e0b904e1-2795-46aa-abfb-940716ee4b0c",
+    "applicationNumber": "VA-2026-000001",
+    "touristId": "d052b618-910f-4886-8d69-5a1e27a6949b",
+    "country": "Japan",
+    "visaType": "Tourist",
+    "status": "DRAFT",
+    "submissionDate": null,
+    "decisionDate": null,
+    "notes": "First time visit",
+    "createdByEmployeeId": "c1611a91-4d33-4bb4-ac81-ec0e02613cfb",
+    "updatedByEmployeeId": null,
+    "createdAt": "2026-06-19T07:24:00.000Z",
+    "updatedAt": "2026-06-19T07:24:00.000Z",
+    "tourist": { ... },
+    "createdByEmployee": { "id": "...", "fullName": "..." },
+    "updatedByEmployee": null
+  }
+  ```
+
+#### GET /api/v1/visa-applications
+* **Description**: Returns a paginated, searchable, and filtered list of applications.
+* **Query Parameters**:
+  * `page` (optional)
+  * `limit` (optional)
+  * `search` (optional, searches applicationNumber or tourist fullName)
+  * `status` (optional, `DRAFT` | `SUBMITTED` | `IN_REVIEW` | `APPROVED` | `REJECTED` | `CANCELLED`)
+  * `country` (optional)
+* **Response**: Paginated items with metadata.
+
+#### GET /api/v1/visa-applications/:id
+* **Description**: Details of a visa application, including tourist and passport.
+* **Response**: Application details.
+
+#### PATCH /api/v1/visa-applications/:id
+* **Description**: Updates application (allowed only if status is `DRAFT`).
+* **Request**:
+  ```json
+  {
+    "country": "South Korea",
+    "visaType": "Business"
+  }
+  ```
+* **Response**: Updated application details.
+
+#### DELETE /api/v1/visa-applications/:id
+* **Description**: Soft deletes the application.
+* **Response**: `204 No Content`
+
+#### PATCH /api/v1/visa-applications/:id/status
+* **Description**: Steps through the application process status.
+* **Request**:
+  ```json
+  {
+    "status": "SUBMITTED",
+    "notes": "Documents verified"
+  }
+  ```
+* **Response**: Updated application details.
+
+---
+
+## Environment Variables
+
+The system requires the following environment variables to run. Validation is performed on startup via the Joi schema.
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `PORT` | Yes | HTTP server port (e.g., `3000`) |
+| `DATABASE_URL` | Yes | PostgreSQL connection URI string (`postgresql://user:pass@host:port/db`) |
+| `JWT_ACCESS_SECRET` | Yes | Signing secret key for JWT access tokens |
+| `JWT_ACCESS_EXPIRES_IN` | Yes | Expiry duration for access tokens (e.g., `15m`) |
+| `JWT_REFRESH_SECRET` | Yes | Signing secret key for JWT refresh tokens |
+| `JWT_REFRESH_EXPIRES_IN` | Yes | Expiry duration for refresh tokens (e.g., `30d`) |
+
+---
+
+## Running Locally
+
+### 1. Setup Environment
+Clone the repository and create your `.env` file in the root directory following the **Environment Variables** specification.
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Run PostgreSQL Database
+Ensure you have a local PostgreSQL instance running, or launch one via Docker:
+```bash
+docker compose up -d
+```
+
+### 4. Database Migrations
+Initialize database tables, schemas, and indices:
+```bash
+npx prisma migrate dev
+```
+
+### 5. Start Application
 ```bash
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
+npm run start:prod
 ```
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ npm run test
+## Docker Usage
 
-# e2e tests
-$ npm run test:e2e
+Use the following commands to spin up PostgreSQL containers defined in the setup configuration:
 
-# test coverage
-$ npm run test:cov
+* **Start database container in background**:
+  ```bash
+  docker compose up -d
+  ```
+
+* **View container status**:
+  ```bash
+  docker compose ps
+  ```
+
+* **View container logs**:
+  ```bash
+  docker compose logs -f
+  ```
+
+* **Stop and remove database container**:
+  ```bash
+  docker compose down
+  ```
+
+---
+
+## Swagger
+
+Interactive API Swagger documentation is generated automatically on server launch. You can access the interface, inspect DTO schemas, and try out requests directly:
+
+* **Swagger URL**: `http://localhost:<PORT>/api/docs` (default: `http://localhost:3000/api/docs`)
+
+---
+
+## Security Features
+
+* **Cryptographic Hashing**: Employee passwords are encrypted using Bcrypt prior to storage.
+* **Token Hashing**: Refresh tokens are cryptographically hashed using Bcrypt before DB insertions to prevent compromise in case of database leaks.
+* **Refresh Token Rotation (RTR)**: Stateful token verification that revokes previous tokens and prevents token replay attacks.
+* **Request Validation**: Validation pipes mapping decorators (`class-validator`) reject invalid inputs before routes process them.
+* **Security Headers**: Integrated Helmet middleware to add secure headers (CSP, HSTS, X-Frame-Options).
+* **CORS & Compression**: Standard Express CORS configuration and Gzip payload compression.
+
+---
+
+## Error Response Format
+
+Unhandled system and database exceptions are mapped to consistent client formats via the `PrismaExceptionFilter` and NestJS's built-in filters.
+
+### Conflict Exception Example (P2002 Unique Constraint)
+```json
+{
+  "statusCode": 409,
+  "timestamp": "2026-06-19T07:25:00.000Z",
+  "path": "/tourists",
+  "message": "Unique constraint violation"
+}
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+### Not Found Exception Example (P2025 Resource Missing)
+```json
+{
+  "statusCode": 404,
+  "timestamp": "2026-06-19T07:25:10.000Z",
+  "path": "/api/v1/visa-applications/some-uuid",
+  "message": "Requested resource was not found"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Validation Error Example (400 Bad Request)
+```json
+{
+  "message": [
+    "passport.passportNumber must be a string",
+    "passport.passportNumber should not be empty"
+  ],
+  "error": "Bad Request",
+  "statusCode": 400
+}
+```
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Future Roadmap
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+The application modular architecture has designated skeletons ready for future service expansion:
+* **`DestinationModule`**: Location, descriptions, and operational flags for destinations.
+* **`TripModule`**: Schedule departures, participant bounds, and travel group mappings.
+* **`AssignmentModule`**: Assignment structures connecting Employees to Tourist workflows.
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Development Notes
 
-## Stay in touch
+### Architectural Decisions
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+* **Feature-Based Modules**: Code is separated into self-contained domain boundaries (modules), promoting decoupling and easier maintenance as the backend expands.
+* **Prisma ORM**: Chosen for type-safe query building, auto-generated typing definitions directly in sync with schema designs, and migration workflows.
+* **Stateful Refresh Tokens**: Tokens are recorded dynamically in the database. This allows admins to invalidate active sessions instantly (e.g., during lockouts or security events).
+* **Soft Delete Logic**: Retaining records while marking them with `deletedAt` maintains historical integrity for financial/audit trails while hiding them from standard queries.
