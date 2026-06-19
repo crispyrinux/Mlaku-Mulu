@@ -39,7 +39,9 @@ export class DestinationsService {
 
     const where: Prisma.DestinationWhereInput = {
       deletedAt: null,
-      ...(query.country ? { country: { equals: query.country, mode: 'insensitive' as const } } : {}),
+      ...(query.country
+        ? { country: { equals: query.country, mode: 'insensitive' as const } }
+        : {}),
       ...(search
         ? {
             OR: [
@@ -90,11 +92,21 @@ export class DestinationsService {
     return this.prisma.destination.update({
       where: { id },
       data: {
-        ...(updateDestinationDto.name !== undefined ? { name: updateDestinationDto.name } : {}),
-        ...(updateDestinationDto.description !== undefined ? { description: updateDestinationDto.description } : {}),
-        ...(updateDestinationDto.country !== undefined ? { country: updateDestinationDto.country } : {}),
-        ...(updateDestinationDto.city !== undefined ? { city: updateDestinationDto.city } : {}),
-        ...(updateDestinationDto.isActive !== undefined ? { isActive: updateDestinationDto.isActive } : {}),
+        ...(updateDestinationDto.name !== undefined
+          ? { name: updateDestinationDto.name }
+          : {}),
+        ...(updateDestinationDto.description !== undefined
+          ? { description: updateDestinationDto.description }
+          : {}),
+        ...(updateDestinationDto.country !== undefined
+          ? { country: updateDestinationDto.country }
+          : {}),
+        ...(updateDestinationDto.city !== undefined
+          ? { city: updateDestinationDto.city }
+          : {}),
+        ...(updateDestinationDto.isActive !== undefined
+          ? { isActive: updateDestinationDto.isActive }
+          : {}),
       },
       include: this.destinationInclude,
     });

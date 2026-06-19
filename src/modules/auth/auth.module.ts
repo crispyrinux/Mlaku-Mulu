@@ -14,7 +14,13 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 @Module({
   imports: [ConfigModule, JwtModule, PassportModule, PrismaModule],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, TokenService, JwtStrategy, RolesGuard],
+  providers: [
+    AuthService,
+    PasswordService,
+    TokenService,
+    JwtStrategy,
+    RolesGuard,
+  ],
   exports: [AuthService, TokenService],
 })
 export class AuthModule {}

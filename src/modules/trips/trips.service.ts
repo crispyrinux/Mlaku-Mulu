@@ -56,9 +56,7 @@ export class TripsService {
       ...(query.destinationId ? { destinationId: query.destinationId } : {}),
       ...(search
         ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' as const } },
-            ],
+            OR: [{ name: { contains: search, mode: 'insensitive' as const } }],
           }
         : {}),
     };

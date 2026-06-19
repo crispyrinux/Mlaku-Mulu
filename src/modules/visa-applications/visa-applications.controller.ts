@@ -71,7 +71,9 @@ export class VisaApplicationsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get visa application detail by ID' })
-  @ApiOkResponse({ description: 'Visa application detail (includes tourist and passport)' })
+  @ApiOkResponse({
+    description: 'Visa application detail (includes tourist and passport)',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.visaApplicationsService.findOne(id);
@@ -80,7 +82,9 @@ export class VisaApplicationsController {
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update visa application (only allowed in DRAFT status)' })
+  @ApiOperation({
+    summary: 'Update visa application (only allowed in DRAFT status)',
+  })
   @ApiBody({ type: UpdateVisaApplicationDto })
   @ApiOkResponse({ description: 'Visa application updated successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -96,7 +100,9 @@ export class VisaApplicationsController {
   @Roles(Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft delete a visa application' })
-  @ApiNoContentResponse({ description: 'Visa application deleted successfully' })
+  @ApiNoContentResponse({
+    description: 'Visa application deleted successfully',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.visaApplicationsService.softDelete(id);
@@ -107,13 +113,19 @@ export class VisaApplicationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Change the status of a visa application' })
   @ApiBody({ type: UpdateVisaApplicationStatusDto })
-  @ApiOkResponse({ description: 'Visa application status updated successfully' })
+  @ApiOkResponse({
+    description: 'Visa application status updated successfully',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateVisaApplicationStatusDto,
     @CurrentUser() employee: Prisma.Employee,
   ) {
-    return this.visaApplicationsService.updateStatus(id, statusDto, employee.id);
+    return this.visaApplicationsService.updateStatus(
+      id,
+      statusDto,
+      employee.id,
+    );
   }
 }

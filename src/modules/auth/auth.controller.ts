@@ -51,7 +51,9 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token using refresh token rotation' })
+  @ApiOperation({
+    summary: 'Refresh access token using refresh token rotation',
+  })
   @ApiBody({ type: RefreshTokenDto })
   @ApiOkResponse({
     description: 'Token refreshed successfully',

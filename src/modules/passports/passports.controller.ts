@@ -58,7 +58,9 @@ export class PassportsController {
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update passport (passport number cannot be changed)' })
+  @ApiOperation({
+    summary: 'Update passport (passport number cannot be changed)',
+  })
   @ApiBody({ type: UpdatePassportDto })
   @ApiOkResponse({ description: 'Passport updated successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })

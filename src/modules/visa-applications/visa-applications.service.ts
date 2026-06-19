@@ -115,7 +115,7 @@ export class VisaApplicationsService {
               },
             ],
           }
-         : {}),
+        : {}),
     };
 
     const [total, items] = await Promise.all([
@@ -175,8 +175,12 @@ export class VisaApplicationsService {
     const updated = await this.prisma.visaApplication.update({
       where: { id },
       data: {
-        ...(updateDto.country !== undefined ? { country: updateDto.country } : {}),
-        ...(updateDto.visaType !== undefined ? { visaType: updateDto.visaType } : {}),
+        ...(updateDto.country !== undefined
+          ? { country: updateDto.country }
+          : {}),
+        ...(updateDto.visaType !== undefined
+          ? { visaType: updateDto.visaType }
+          : {}),
         ...(updateDto.notes !== undefined ? { notes: updateDto.notes } : {}),
         updatedByEmployeeId: employeeId,
       },

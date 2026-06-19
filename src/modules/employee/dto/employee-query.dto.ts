@@ -10,5 +10,6 @@ export class EmployeeQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsIn(['id', 'fullName', 'email', 'createdAt', 'updatedAt'])
-  sortBy?: 'id' | 'fullName' | 'email' | 'createdAt' | 'updatedAt' = 'createdAt';
+  sortBy?: 'id' | 'fullName' | 'email' | 'createdAt' | 'updatedAt' =
+    'createdAt';
 }

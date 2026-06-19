@@ -22,12 +22,28 @@ export class TripQueryDto extends PaginationQueryDto {
   destinationId?: string;
 
   @ApiPropertyOptional({
-    enum: ['id', 'name', 'startDate', 'endDate', 'status', 'createdAt', 'updatedAt'],
+    enum: [
+      'id',
+      'name',
+      'startDate',
+      'endDate',
+      'status',
+      'createdAt',
+      'updatedAt',
+    ],
     example: 'createdAt',
     default: 'createdAt',
   })
   @IsOptional()
-  @IsIn(['id', 'name', 'startDate', 'endDate', 'status', 'createdAt', 'updatedAt'])
+  @IsIn([
+    'id',
+    'name',
+    'startDate',
+    'endDate',
+    'status',
+    'createdAt',
+    'updatedAt',
+  ])
   sortBy?:
     | 'id'
     | 'name'
