@@ -63,7 +63,6 @@ model Tourist {
   fullName            String
   birthDate           DateTime
   gender              Gender
-  passportNumber      String          @unique
   nationality         String
   email               String?
   phone               String?
@@ -76,11 +75,24 @@ model Tourist {
   updatedByEmployeeId String?         @db.Uuid
   createdByEmployee   Employee        @relation("CreatedByEmployee", fields: [createdByEmployeeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   updatedByEmployee   Employee?       @relation("UpdatedByEmployee", fields: [updatedByEmployeeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  passport            Passport?
   assignments         Assignment[]
   tripParticipants    TripParticipant[]
 
   @@index([createdByEmployeeId])
   @@index([updatedByEmployeeId])
+}
+
+model Passport {
+  id             String    @id @default(uuid()) @db.Uuid
+  touristId      String    @unique @db.Uuid
+  passportNumber String    @unique
+  issueDate      DateTime?
+  expiryDate     DateTime?
+  placeOfIssue   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  tourist        Tourist   @relation(fields: [touristId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Destination {

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,42 +12,61 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TouristsService {
+  private readonly touristInclude = {
+    passport: true,
+    createdByEmployee: {
+      select: { id: true, fullName: true },
+    },
+    updatedByEmployee: {
+      select: { id: true, fullName: true },
+    },
+  };
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createTouristDto: CreateTouristDto, employeeId: string) {
-    const existingTourist = await this.prisma.tourist.findFirst({
-      where: {
-        passportNumber: createTouristDto.passportNumber,
-        deletedAt: null,
-      },
+    // Check passportNumber uniqueness
+    const existingPassport = await this.prisma.passport.findUnique({
+      where: { passportNumber: createTouristDto.passport.passportNumber },
     });
 
-    if (existingTourist) {
-      throw new BadRequestException(
-        'Tourist with this passport number already exists',
-      );
+    if (existingPassport) {
+      throw new ConflictException('Passport number already exists');
     }
 
-    const tourist = await this.prisma.tourist.create({
-      data: {
-        fullName: createTouristDto.fullName,
-        birthDate: new Date(createTouristDto.birthDate),
-        gender: createTouristDto.gender,
-        passportNumber: createTouristDto.passportNumber,
-        nationality: createTouristDto.nationality,
-        email: createTouristDto.email,
-        phone: createTouristDto.phone,
-        notes: createTouristDto.notes,
-        createdByEmployeeId: employeeId,
-      },
-      include: {
-        createdByEmployee: {
-          select: { id: true, fullName: true },
+    // Create tourist + passport in a transaction
+    const tourist = await this.prisma.$transaction(async (tx) => {
+      const newTourist = await tx.tourist.create({
+        data: {
+          fullName: createTouristDto.fullName,
+          birthDate: new Date(createTouristDto.birthDate),
+          gender: createTouristDto.gender,
+          nationality: createTouristDto.nationality,
+          email: createTouristDto.email,
+          phone: createTouristDto.phone,
+          notes: createTouristDto.notes,
+          createdByEmployeeId: employeeId,
         },
-        updatedByEmployee: {
-          select: { id: true, fullName: true },
+      });
+
+      await tx.passport.create({
+        data: {
+          touristId: newTourist.id,
+          passportNumber: createTouristDto.passport.passportNumber,
+          issueDate: createTouristDto.passport.issueDate
+            ? new Date(createTouristDto.passport.issueDate)
+            : null,
+          expiryDate: createTouristDto.passport.expiryDate
+            ? new Date(createTouristDto.passport.expiryDate)
+            : null,
+          placeOfIssue: createTouristDto.passport.placeOfIssue,
         },
-      },
+      });
+
+      return tx.tourist.findUniqueOrThrow({
+        where: { id: newTourist.id },
+        include: this.touristInclude,
+      });
     });
 
     return this.toResponse(tourist);
@@ -65,15 +85,17 @@ export class TouristsService {
             OR: [
               { fullName: { contains: search, mode: 'insensitive' as const } },
               {
-                passportNumber: {
+                nationality: {
                   contains: search,
                   mode: 'insensitive' as const,
                 },
               },
               {
-                nationality: {
-                  contains: search,
-                  mode: 'insensitive' as const,
+                passport: {
+                  passportNumber: {
+                    contains: search,
+                    mode: 'insensitive' as const,
+                  },
                 },
               },
             ],
@@ -85,14 +107,7 @@ export class TouristsService {
       this.prisma.tourist.count({ where }),
       this.prisma.tourist.findMany({
         where,
-        include: {
-          createdByEmployee: {
-            select: { id: true, fullName: true },
-          },
-          updatedByEmployee: {
-            select: { id: true, fullName: true },
-          },
-        },
+        include: this.touristInclude,
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -113,14 +128,7 @@ export class TouristsService {
   async findOne(id: string) {
     const tourist = await this.prisma.tourist.findFirst({
       where: { id, deletedAt: null },
-      include: {
-        createdByEmployee: {
-          select: { id: true, fullName: true },
-        },
-        updatedByEmployee: {
-          select: { id: true, fullName: true },
-        },
-      },
+      include: this.touristInclude,
     });
 
     if (!tourist) {
@@ -172,14 +180,7 @@ export class TouristsService {
           : {}),
         updatedByEmployeeId: employeeId,
       },
-      include: {
-        createdByEmployee: {
-          select: { id: true, fullName: true },
-        },
-        updatedByEmployee: {
-          select: { id: true, fullName: true },
-        },
-      },
+      include: this.touristInclude,
     });
 
     return this.toResponse(updatedTourist);
@@ -206,7 +207,6 @@ export class TouristsService {
       fullName: tourist.fullName,
       birthDate: tourist.birthDate,
       gender: tourist.gender,
-      passportNumber: tourist.passportNumber,
       nationality: tourist.nationality,
       email: tourist.email,
       phone: tourist.phone,
@@ -218,6 +218,7 @@ export class TouristsService {
       updatedByEmployeeId: tourist.updatedByEmployeeId,
       createdByEmployee: tourist.createdByEmployee ?? null,
       updatedByEmployee: tourist.updatedByEmployee ?? null,
+      passport: tourist.passport ?? null,
     };
   }
 }

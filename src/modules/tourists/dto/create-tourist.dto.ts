@@ -6,8 +6,32 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { Gender } from '@prisma/client';
+
+export class CreatePassportNestedDto {
+  @ApiProperty({ example: 'A12345678' })
+  @IsString()
+  @IsNotEmpty()
+  passportNumber: string;
+
+  @ApiPropertyOptional({ example: '2020-01-15', type: String, format: 'date' })
+  @IsDateString()
+  @IsOptional()
+  issueDate?: string;
+
+  @ApiPropertyOptional({ example: '2030-01-15', type: String, format: 'date' })
+  @IsDateString()
+  @IsOptional()
+  expiryDate?: string;
+
+  @ApiPropertyOptional({ example: 'New York, USA' })
+  @IsString()
+  @IsOptional()
+  placeOfIssue?: string;
+}
 
 export class CreateTouristDto {
   @ApiProperty({ example: 'John Doe' })
@@ -22,11 +46,6 @@ export class CreateTouristDto {
   @ApiProperty({ enum: Gender, example: Gender.MALE })
   @IsEnum(Gender)
   gender: Gender;
-
-  @ApiProperty({ example: 'A12345678' })
-  @IsString()
-  @IsNotEmpty()
-  passportNumber: string;
 
   @ApiProperty({ example: 'United States' })
   @IsString()
@@ -47,4 +66,9 @@ export class CreateTouristDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @ApiProperty({ type: CreatePassportNestedDto })
+  @ValidateNested()
+  @Type(() => CreatePassportNestedDto)
+  passport: CreatePassportNestedDto;
 }

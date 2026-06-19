@@ -70,7 +70,7 @@ export class TouristsController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update tourist (passport number cannot be changed)' })
+  @ApiOperation({ summary: 'Update tourist (passport managed separately)' })
   @ApiBody({ type: UpdateTouristDto })
   @ApiOkResponse({ description: 'Tourist updated successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
