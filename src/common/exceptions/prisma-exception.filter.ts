@@ -19,7 +19,11 @@ export class PrismaExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const prismaError = exception as PrismaKnownError;
 
-    if (!prismaError?.code || typeof prismaError.code !== 'string' || !prismaError.code.startsWith('P')) {
+    if (
+      !prismaError?.code ||
+      typeof prismaError.code !== 'string' ||
+      !prismaError.code.startsWith('P')
+    ) {
       return;
     }
 

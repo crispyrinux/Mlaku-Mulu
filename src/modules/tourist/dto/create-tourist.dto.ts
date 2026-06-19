@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { Gender } from '@prisma/client';
 
 export class CreateTouristDto {

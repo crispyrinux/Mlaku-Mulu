@@ -13,14 +13,22 @@ import { Employee, Role, Gender } from '@prisma/client';
 
 @Injectable()
 export class EmployeeService {
-  private readonly sortableFields = new Set(['id', 'fullName', 'email', 'createdAt', 'updatedAt']);
+  private readonly sortableFields = new Set([
+    'id',
+    'fullName',
+    'email',
+    'createdAt',
+    'updatedAt',
+  ]);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
   ) {}
 
-  async create(createEmployeeDto: CreateEmployeeDto): Promise<EmployeeResponseDto> {
+  async create(
+    createEmployeeDto: CreateEmployeeDto,
+  ): Promise<EmployeeResponseDto> {
     const existingEmployee = await this.prisma.employee.findFirst({
       where: { email: createEmployeeDto.email, deletedAt: null },
     });
@@ -29,7 +37,9 @@ export class EmployeeService {
       throw new BadRequestException('Email already exists');
     }
 
-    const password = await this.passwordService.hash(createEmployeeDto.password);
+    const password = await this.passwordService.hash(
+      createEmployeeDto.password,
+    );
 
     const employee = await this.prisma.employee.create({
       data: {
@@ -67,7 +77,9 @@ export class EmployeeService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const search = query.search?.trim();
-    const sortBy = this.sortableFields.has(query.sortBy ?? '') ? query.sortBy! : 'createdAt';
+    const sortBy = this.sortableFields.has(query.sortBy ?? '')
+      ? query.sortBy!
+      : 'createdAt';
     const sortOrder = query.sortOrder ?? 'desc';
 
     const where = {
@@ -101,7 +113,10 @@ export class EmployeeService {
     };
   }
 
-  async update(id: string, updateEmployeeDto: UpdateEmployeeDto): Promise<EmployeeResponseDto> {
+  async update(
+    id: string,
+    updateEmployeeDto: UpdateEmployeeDto,
+  ): Promise<EmployeeResponseDto> {
     const employee = await this.prisma.employee.findFirst({
       where: { id, deletedAt: null },
     });
@@ -127,13 +142,25 @@ export class EmployeeService {
     const updatedEmployee = await this.prisma.employee.update({
       where: { id },
       data: {
-        ...(updateEmployeeDto.fullName !== undefined ? { fullName: updateEmployeeDto.fullName } : {}),
-        ...(updateEmployeeDto.email !== undefined ? { email: updateEmployeeDto.email } : {}),
+        ...(updateEmployeeDto.fullName !== undefined
+          ? { fullName: updateEmployeeDto.fullName }
+          : {}),
+        ...(updateEmployeeDto.email !== undefined
+          ? { email: updateEmployeeDto.email }
+          : {}),
         ...(password !== undefined ? { password } : {}),
-        ...(updateEmployeeDto.birthDate !== undefined ? { birthDate: new Date(updateEmployeeDto.birthDate) } : {}),
-        ...(updateEmployeeDto.gender !== undefined ? { gender: updateEmployeeDto.gender } : {}),
-        ...(updateEmployeeDto.nationality !== undefined ? { nationality: updateEmployeeDto.nationality } : {}),
-        ...(updateEmployeeDto.passportNumber !== undefined ? { passportNumber: updateEmployeeDto.passportNumber } : {}),
+        ...(updateEmployeeDto.birthDate !== undefined
+          ? { birthDate: new Date(updateEmployeeDto.birthDate) }
+          : {}),
+        ...(updateEmployeeDto.gender !== undefined
+          ? { gender: updateEmployeeDto.gender }
+          : {}),
+        ...(updateEmployeeDto.nationality !== undefined
+          ? { nationality: updateEmployeeDto.nationality }
+          : {}),
+        ...(updateEmployeeDto.passportNumber !== undefined
+          ? { passportNumber: updateEmployeeDto.passportNumber }
+          : {}),
       },
     });
 
@@ -160,9 +187,9 @@ export class EmployeeService {
       id: employee.id,
       fullName: employee.fullName,
       email: employee.email,
-      role: employee.role as Role,
+      role: employee.role,
       birthDate: employee.birthDate,
-      gender: employee.gender as Gender,
+      gender: employee.gender,
       nationality: employee.nationality,
       passportNumber: employee.passportNumber,
       isActive: employee.isActive,

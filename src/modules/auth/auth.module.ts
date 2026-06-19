@@ -8,11 +8,13 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RolesGuard } from './guards/roles.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [ConfigModule, JwtModule, PassportModule, PrismaModule],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, TokenService, JwtStrategy],
-  exports: [AuthService, PasswordService, TokenService, JwtStrategy],
+  providers: [AuthService, PasswordService, TokenService, JwtStrategy, RolesGuard],
+  exports: [AuthService, TokenService],
 })
 export class AuthModule {}

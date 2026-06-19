@@ -27,7 +27,9 @@ export class TouristService {
     private readonly passwordService: PasswordService,
   ) {}
 
-  async create(createTouristDto: CreateTouristDto): Promise<TouristResponseDto> {
+  async create(
+    createTouristDto: CreateTouristDto,
+  ): Promise<TouristResponseDto> {
     const existingTourist = await this.prisma.tourist.findFirst({
       where: {
         deletedAt: null,
@@ -90,7 +92,10 @@ export class TouristService {
               { fullName: { contains: search, mode: 'insensitive' as const } },
               { email: { contains: search, mode: 'insensitive' as const } },
               {
-                passportNumber: { contains: search, mode: 'insensitive' as const },
+                passportNumber: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
               },
             ],
           }
@@ -164,7 +169,10 @@ export class TouristService {
       updateTouristDto.passportNumber !== tourist.passportNumber
     ) {
       const existingPassport = await this.prisma.tourist.findFirst({
-        where: { passportNumber: updateTouristDto.passportNumber, deletedAt: null },
+        where: {
+          passportNumber: updateTouristDto.passportNumber,
+          deletedAt: null,
+        },
       });
       if (existingPassport) {
         throw new BadRequestException('Passport number already exists');
@@ -231,7 +239,7 @@ export class TouristService {
       id: tourist.id,
       fullName: tourist.fullName,
       email: tourist.email,
-      gender: tourist.gender as TouristResponseDto['gender'],
+      gender: tourist.gender,
       birthDate: tourist.birthDate,
       nationality: tourist.nationality,
       passportNumber: tourist.passportNumber,

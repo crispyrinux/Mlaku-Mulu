@@ -18,7 +18,9 @@ export class TouristQueryDto {
   @Max(100)
   limit?: number;
 
-  @ApiPropertyOptional({ description: 'Search by full name, email, or passport number' })
+  @ApiPropertyOptional({
+    description: 'Search by full name, email, or passport number',
+  })
   @IsOptional()
   @IsString()
   search?: string;

@@ -14,115 +14,122 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<{
-    accessToken: string;
-    refreshToken: string;
-    user: { id: string; email: string; fullName: string; userType: JwtPayload['userType'] };
-  }> {
-    const employee = await this.prisma.employee.findUnique({ where: { email: loginDto.email } });
-    const tourist = employee ? null : await this.prisma.tourist.findUnique({ where: { email: loginDto.email } });
-    const user = employee ?? tourist;
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // 1. Find employee by email
+    const employee = await this.prisma.employee.findUnique({
+      where: { email: loginDto.email },
+    });
 
-    if (!user) {
+    if (!employee || !employee.isActive) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await this.passwordService.compare(loginDto.password, user.password);
+    // 2. Verify password
+    const isPasswordValid = await this.passwordService.compare(
+      loginDto.password,
+      employee.password,
+    );
+
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const userType: JwtPayload['userType'] = employee ? 'EMPLOYEE' : 'TOURIST';
-    const payload: JwtPayload = { sub: user.id, email: user.email, userType };
-
+    // 3. Issue access token
+    const payload: JwtPayload = { sub: employee.id, role: employee.role };
     const accessToken = this.tokenService.generateAccessToken(payload);
-    const { refreshToken, refreshTokenHash } = await this.tokenService.generateRefreshToken(payload);
+
+    // 4. Issue refresh token (random secure token, hashed before storage)
+    const { refreshToken, refreshTokenHash } =
+      await this.tokenService.generateRefreshToken();
 
     await this.prisma.refreshToken.create({
       data: {
-        userType,
-        userId: user.id,
+        employeeId: employee.id,
         tokenHash: refreshTokenHash,
-        expiresAt: this.getRefreshTokenExpiry(),
+        expiresAt: this.tokenService.getRefreshTokenExpiry(),
       },
     });
 
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        userType,
-      },
-    };
+    return { accessToken, refreshToken };
   }
 
-  async refresh(refreshTokenDto: RefreshTokenDto): Promise<{ accessToken: string; refreshToken: string }> {
+  async refresh(
+    refreshTokenDto: RefreshTokenDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // 1. Find all non-revoked, non-expired tokens
     const storedTokens = await this.prisma.refreshToken.findMany({
+      where: { revokedAt: null },
       orderBy: { createdAt: 'desc' },
     });
 
     for (const storedToken of storedTokens) {
-      const isTokenValid = await this.passwordService.compare(refreshTokenDto.refreshToken, storedToken.tokenHash);
+      // 1. Validate token
+      const isTokenValid = await this.tokenService.verifyRefreshToken(
+        refreshTokenDto.refreshToken,
+        storedToken.tokenHash,
+      );
+
       if (!isTokenValid) {
         continue;
       }
 
-      const user =
-        storedToken.userType === 'EMPLOYEE'
-          ? await this.prisma.employee.findUnique({ where: { id: storedToken.userId } })
-          : await this.prisma.tourist.findUnique({ where: { id: storedToken.userId } });
-
-      if (!user) {
-        throw new UnauthorizedException('Invalid refresh token');
+      // Check if token is expired
+      if (storedToken.expiresAt < new Date()) {
+        // Revoke the expired token
+        await this.prisma.refreshToken.update({
+          where: { id: storedToken.id },
+          data: { revokedAt: new Date() },
+        });
+        throw new UnauthorizedException('Refresh token has expired');
       }
 
-      const payload: JwtPayload = {
-        sub: user.id,
-        email: user.email,
-        userType: storedToken.userType,
-      };
+      // Verify employee still exists and is active
+      const employee = await this.prisma.employee.findUnique({
+        where: { id: storedToken.employeeId },
+      });
 
+      if (!employee || !employee.isActive) {
+        throw new UnauthorizedException('Employee not found or inactive');
+      }
+
+      // 2. Revoke old token
+      await this.prisma.refreshToken.update({
+        where: { id: storedToken.id },
+        data: { revokedAt: new Date() },
+      });
+
+      // 3. Create new refresh token
+      const { refreshToken: newRefreshToken, refreshTokenHash } =
+        await this.tokenService.generateRefreshToken();
+
+      await this.prisma.refreshToken.create({
+        data: {
+          employeeId: employee.id,
+          tokenHash: refreshTokenHash,
+          expiresAt: this.tokenService.getRefreshTokenExpiry(),
+        },
+      });
+
+      // 4 & 5. Return new access token and new refresh token
+      const payload: JwtPayload = { sub: employee.id, role: employee.role };
       const accessToken = this.tokenService.generateAccessToken(payload);
-      const { refreshToken, refreshTokenHash } = await this.tokenService.generateRefreshToken(payload);
 
-      await this.prisma.$transaction([
-        this.prisma.refreshToken.delete({ where: { id: storedToken.id } }),
-        this.prisma.refreshToken.create({
-          data: {
-            userType: storedToken.userType,
-            userId: user.id,
-            tokenHash: refreshTokenHash,
-            expiresAt: this.getRefreshTokenExpiry(),
-          },
-        }),
-      ]);
-
-      return { accessToken, refreshToken };
+      return { accessToken, refreshToken: newRefreshToken };
     }
 
     throw new UnauthorizedException('Invalid refresh token');
   }
 
-  async logout(refreshTokenDto: RefreshTokenDto): Promise<void> {
-    const storedTokens = await this.prisma.refreshToken.findMany({
-      orderBy: { createdAt: 'desc' },
+  async logout(employeeId: string): Promise<void> {
+    // Revoke all active refresh tokens for the current employee
+    await this.prisma.refreshToken.updateMany({
+      where: {
+        employeeId,
+        revokedAt: null,
+      },
+      data: { revokedAt: new Date() },
     });
-
-    for (const storedToken of storedTokens) {
-      const isTokenValid = await this.passwordService.compare(refreshTokenDto.refreshToken, storedToken.tokenHash);
-      if (isTokenValid) {
-        await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
-        return;
-      }
-    }
-
-    throw new UnauthorizedException('Invalid refresh token');
-  }
-
-  private getRefreshTokenExpiry(): Date {
-    return new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
   }
 }

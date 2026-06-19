@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { PasswordService } from '../../common/security/password.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import * as crypto from 'crypto';
+import { PasswordService } from '../../common/security/password.service';
 
 @Injectable()
 export class TokenService {
@@ -14,26 +15,33 @@ export class TokenService {
 
   generateAccessToken(payload: JwtPayload): string {
     const secret = this.configService.get<string>('jwt.accessSecret') ?? '';
-    const expiresIn = this.configService.get<string>('jwt.accessExpiresIn') ?? '';
+    const expiresIn =
+      this.configService.get<string>('jwt.accessExpiresIn') ?? '15m';
 
-    return this.jwtService.sign(payload, {
-      secret,
-      expiresIn: expiresIn as any,
-    });
+    return this.jwtService.sign(
+      { sub: payload.sub, role: payload.role },
+      { secret, expiresIn: expiresIn as any },
+    );
   }
 
-  async generateRefreshToken(payload: JwtPayload): Promise<{ refreshToken: string; refreshTokenHash: string }> {
-    const secret = this.configService.get<string>('jwt.refreshSecret') ?? '';
-    const expiresIn = this.configService.get<string>('jwt.refreshExpiresIn') ?? '';
-    const refreshToken = this.jwtService.sign(payload, {
-      secret,
-      expiresIn: expiresIn as any,
-    });
+  async generateRefreshToken(): Promise<{
+    refreshToken: string;
+    refreshTokenHash: string;
+  }> {
+    const refreshToken = crypto.randomBytes(64).toString('hex');
     const refreshTokenHash = await this.passwordService.hash(refreshToken);
 
-    return {
-      refreshToken,
-      refreshTokenHash,
-    };
+    return { refreshToken, refreshTokenHash };
+  }
+
+  async verifyRefreshToken(
+    rawToken: string,
+    hashedToken: string,
+  ): Promise<boolean> {
+    return this.passwordService.compare(rawToken, hashedToken);
+  }
+
+  getRefreshTokenExpiry(): Date {
+    return new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
   }
 }
