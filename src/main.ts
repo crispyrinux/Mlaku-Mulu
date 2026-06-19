@@ -27,6 +27,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
   app.enableShutdownHooks();
 
   const enableSwagger = configService.get<boolean>('enableSwagger') ?? false;

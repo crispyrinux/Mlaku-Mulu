@@ -15,6 +15,8 @@ import { DestinationsModule } from './modules/destinations/destinations.module';
 import { TripsModule } from './modules/trips/trips.module';
 import { AssignmentsModule } from './modules/assignments/assignments.module';
 import { VisaApplicationsModule } from './modules/visa-applications/visa-applications.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -43,7 +45,9 @@ import { VisaApplicationsModule } from './modules/visa-applications/visa-applica
     AssignmentsModule,
     VisaApplicationsModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

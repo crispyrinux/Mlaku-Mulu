@@ -24,7 +24,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
       typeof prismaError.code !== 'string' ||
       !prismaError.code.startsWith('P')
     ) {
-      return;
+      throw exception;
     }
 
     const ctx = host.switchToHttp();
