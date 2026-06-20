@@ -85,9 +85,73 @@ Seluruh dokumentasi API interaktif, skema DTO, serta contoh request/response dis
 
 ---
 
-## Alur Pengguna (User Flows)
+## Hak Akses & Alur Sistem (System Roles & Flows)
 
-Berikut adalah analisis dan visualisasi alur operasional untuk tiga persona pengguna utama pada sistem Mlaku-Mulu:
+Sistem **Mlaku-Mulu** beroperasi dengan membagi pengguna ke dalam tiga peran (persona) utama berdasarkan *Role-Based Access Control* (RBAC). Berikut adalah gambaran besar alur yang dapat dilakukan oleh masing-masing peran:
+
+### 1. Super Admin & Admin
+Berfokus pada kontrol penuh sistem, manajerial tingkat atas, dan pemeliharaan data.
+
+```mermaid
+graph TD
+    A[Super Admin / Admin] -->|/auth/login| B(Login Berhasil)
+    B --> C{Menu Utama Sistem}
+    C -->|/staff| D[Manajemen Staff & Admin]
+    D -.->|Super Admin Only| D1[Buat Akun Admin]
+    C -->|/tourists & /passports| E[Manajemen Wisatawan & Paspor]
+    E -.->|Admin/Super Admin Only| E1[Soft Delete Wisatawan]
+    C -->|/destinations & /trips| F[Pengelolaan Destinasi & Jadwal Trip]
+    C -->|/assignments| G[Penugasan Staff ke Wisatawan]
+    C -->|/api/v1/visa-applications| H[Pantau & Hapus Berkas Visa]
+    C -->|/analytics/admin| I[Dashboard Bisnis Global]
+```
+
+- **Manajemen Autentikasi**: Super Admin dapat mendaftarkan Admin baru. Admin dapat mendaftarkan dan mengelola Staff.
+- **Operasional Utama**: Mengelola secara penuh (CRUD) data *Destinations* (Destinasi Wisata), *Trips* (Jadwal Perjalanan), dan membuat *Assignments* (menugaskan staf spesifik untuk mendampingi wisatawan).
+- **Keamanan & Integritas**: Memiliki hak eksklusif untuk melakukan penghapusan logis (*Soft Delete*) pada data penting seperti akun Tourist dan pengajuan Visa.
+- **Pemantauan Bisnis**: Mengakses metrik dan statistik global sistem melalui *Dashboard Analytics Admin* (total wisatawan, rasio keberhasilan visa, dan beban kerja setiap staf).
+
+### 2. Staff (Karyawan)
+Berfokus pada pelayanan, operasional lapangan, dan pendampingan administratif.
+
+```mermaid
+graph TD
+    A[Staff] -->|/auth/login| B(Login Berhasil)
+    B --> C{Aktivitas Harian}
+    C -->|/tourists/assigned| D[Manajemen Wisatawan Asuhan]
+    D -->|/passports| E[Input/Update Paspor Wisatawan]
+    D -->|/api/v1/visa-applications| F[Proses Status Pengajuan Visa]
+    C -->|/trips| G[Lihat Detail Trip Terjadwal]
+    C -->|/analytics/staff| H[Dashboard: Jadwal Terdekat & Beban Kerja]
+```
+
+- **Manajemen Wisatawan**: Melihat dan memperbarui data wisatawan (Tourist) yang ditugaskan kepada mereka.
+- **Alur Pemrosesan Dokumen**: Mendaftarkan dan memperbarui alur status *Visa Applications* wisatawan (DRAFT &rarr; SUBMITTED &rarr; IN_REVIEW &rarr; APPROVED/REJECTED/CANCELLED). Memperbarui informasi *Passport*.
+- **Pemantauan Personal**: Mengecek jadwal *Trips* terdekat dari wisatawan asuhannya dan melacak performa diri sendiri melalui *Dashboard Analytics Staff*.
+
+### 3. Tourist (Wisatawan)
+Portal *Self-Service* yang aksesnya dibatasi secara ketat hanya pada data milik sendiri.
+
+```mermaid
+graph TD
+    A[Tourist] -->|/auth/login| B(Login Berhasil)
+    B --> C{Portal Self-Service}
+    C -->|/tourists/me| D[Lihat & Update Profil Pribadi]
+    C -->|/passports/me| E[Lihat Info Paspor]
+    C -->|/api/v1/visa-applications/me| F[Tracking Status Pengajuan Visa]
+    C -->|/tourists/me/trips| G[Lihat Riwayat & Jadwal Trip Mendatang]
+    C -->|/analytics/tourist| H[Dashboard: Notifikasi Masa Aktif Paspor]
+```
+
+- **Profil Mandiri**: Melihat dan memperbarui detail profil pribadi.
+- **Pelacakan Perjalanan**: Memantau riwayat jadwal perjalanan (*Trips*) baik yang telah selesai, sedang berlangsung, maupun yang akan datang.
+- **Pelacakan Dokumen**: Memantau status terkini dari pengajuan visa dan melihat data paspor mereka.
+- **Notifikasi Pintar**: Mengakses *Dashboard Analytics Tourist* untuk melihat pengingat masa kedaluwarsa paspor dan ringkasan riwayat perjalanan mandiri.
+
+---
+
+### Visualisasi Flow Analitik Operasional
+Selain alur CRUD di atas, berikut adalah visualisasi flow spesifik untuk masing-masing peran saat menggunakan *Dashboard Analytics*:
 
 ### 1. Alur Pengguna: Admin & Super Admin (Operasional Bisnis Makro)
 Peran Admin/Super Admin berfokus pada pengawasan kinerja bisnis makro, alokasi sumber daya staf, dan manajemen destinasi global.
