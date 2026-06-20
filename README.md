@@ -1,5 +1,11 @@
 # Tourism Management Backend
 
+[![Deploy Status](https://img.shields.io/badge/Render-Live-brightgreen?style=flat-square)](https://mlaku-mulu-api.onrender.com/)
+[![API Docs](https://img.shields.io/badge/Swagger-API%20Docs-blue?style=flat-square)](https://mlaku-mulu-api.onrender.com/api/docs)
+
+* **Production URL**: [https://mlaku-mulu-api.onrender.com/](https://mlaku-mulu-api.onrender.com/)
+* **Production API Swagger Docs**: [https://mlaku-mulu-api.onrender.com/api/docs](https://mlaku-mulu-api.onrender.com/api/docs)
+
 A production-grade NestJS backend system built with Prisma ORM and PostgreSQL for managing destinations, trips, assignments, tourists, passport details, and visa applications. The application implements secure employee and tourist authentication, refresh token rotation, global/route-specific rate limiting, secure Helmet headers, dynamic CORS, soft deletes, and Swagger documentation.
 
 ---
@@ -475,7 +481,8 @@ npx prisma db seed
 
 Interactive API Swagger documentation is generated automatically on server launch in environments where it is enabled:
 
-* **Swagger URL**: `http://localhost:<PORT>/api/docs` (default: `http://localhost:3000/api/docs`)
+* **Production Swagger URL**: [https://mlaku-mulu-api.onrender.com/api/docs](https://mlaku-mulu-api.onrender.com/api/docs)
+* **Local Swagger URL**: `http://localhost:<PORT>/api/docs` (default: `http://localhost:3000/api/docs`)
 * **Enable Flag**: Set `ENABLE_SWAGGER=true` in environment variables.
 
 ---
