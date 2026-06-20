@@ -34,7 +34,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Employee or Tourist login',
+    summary: 'Employee or Tourist login (Public)',
     description: '### Access Level: **Public** (No authentication required)\n\nAuthenticates user credentials (either Employee or Tourist) and issues a JWT token pair.',
   })
   @ApiBody({ type: LoginDto })
@@ -56,7 +56,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Refresh access token using refresh token rotation',
+    summary: 'Refresh access token using refresh token rotation (Public)',
     description: '### Access Level: **Public** (No authentication required)\n\nRotates and issues new access and refresh tokens using a valid refresh token.',
   })
   @ApiBody({ type: RefreshTokenDto })
@@ -79,7 +79,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Logout and revoke all refresh tokens',
+    summary: 'Logout and revoke all refresh tokens (Employee, Tourist)',
     description: '### Access Level: **All Authenticated Users** (Employees & Tourists)\n\nRevokes active tokens and ends the session.',
   })
   @ApiNoContentResponse({ description: 'Logged out successfully' })
@@ -92,7 +92,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Get current authenticated employee profile',
+    summary: 'Get current authenticated employee profile (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves the currently logged-in employee profile.',
   })
   @ApiOkResponse({ description: 'Employee profile' })

@@ -45,7 +45,7 @@ export class TripsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create a new trip',
+    summary: 'Create a new trip (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a new scheduled trip.',
   })
   @ApiBody({ type: CreateTripDto })
@@ -59,7 +59,7 @@ export class TripsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get paginated list of trips',
+    summary: 'Get paginated list of trips (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves a list of trips with search/filtering parameters.',
   })
   @ApiOkResponse({ description: 'Paginated list of trips' })
@@ -71,7 +71,7 @@ export class TripsController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get trip detail by ID',
+    summary: 'Get trip detail by ID (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves detailed trip properties by trip ID.',
   })
   @ApiOkResponse({ description: 'Trip detail', type: TripResponseDto })
@@ -84,7 +84,7 @@ export class TripsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Update a trip',
+    summary: 'Update a trip (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates an existing trip\'s properties.',
   })
   @ApiBody({ type: UpdateTripDto })
@@ -102,7 +102,7 @@ export class TripsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Soft delete a trip',
+    summary: 'Soft delete a trip (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nSoft deletes a trip record by trip ID.',
   })
   @ApiNoContentResponse({ description: 'Trip deleted successfully' })

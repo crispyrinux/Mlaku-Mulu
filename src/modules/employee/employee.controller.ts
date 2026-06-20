@@ -42,7 +42,7 @@ export class EmployeeController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create employee',
+    summary: 'Create employee (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a new employee (default role is Staff).',
   })
   @ApiBody({ type: CreateEmployeeDto })
@@ -56,7 +56,7 @@ export class EmployeeController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'List employees',
+    summary: 'List employees (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves a list of all employees with pagination search filters.',
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -67,7 +67,7 @@ export class EmployeeController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get employee detail',
+    summary: 'Get employee detail (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves employee profile details by employee ID.',
   })
   @ApiOkResponse({ type: EmployeeResponseDto })
@@ -80,7 +80,7 @@ export class EmployeeController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Update employee',
+    summary: 'Update employee (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates an employee\'s profile properties.',
   })
   @ApiBody({ type: UpdateEmployeeDto })
@@ -98,7 +98,7 @@ export class EmployeeController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Soft delete employee',
+    summary: 'Soft delete employee (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nSoft deletes an employee by employee ID.',
   })
   @ApiNoContentResponse()

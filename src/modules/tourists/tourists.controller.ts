@@ -47,7 +47,7 @@ export class TouristsController {
   @UserTypes('TOURIST')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get current authenticated tourist profile',
+    summary: 'Get current authenticated tourist profile (Tourist)',
     description: '### Access Level: **Tourist** (Tourist only)\n\nRetrieves the currently logged-in tourist profile.',
   })
   @ApiOkResponse({ description: 'Tourist profile', type: TouristResponseDto })
@@ -60,7 +60,7 @@ export class TouristsController {
   @UserTypes('TOURIST')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get current authenticated tourist trip history',
+    summary: 'Get current authenticated tourist trip history (Tourist)',
     description: '### Access Level: **Tourist** (Tourist only)\n\nRetrieves the logged-in tourist\'s history of trips.',
   })
   @ApiOkResponse({ description: 'Tourist trip history' })
@@ -73,7 +73,7 @@ export class TouristsController {
   @UserTypes('TOURIST')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get details of a trip assigned to the current tourist',
+    summary: 'Get details of a trip assigned to the current tourist (Tourist)',
     description: '### Access Level: **Tourist** (Tourist only)\n\nRetrieves details of a specific trip assigned to the logged-in tourist.',
   })
   @ApiOkResponse({ description: 'Tourist trip detail' })
@@ -89,7 +89,7 @@ export class TouristsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create a new tourist',
+    summary: 'Create a new tourist (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nRegisters a new tourist with passport details.',
   })
   @ApiBody({ type: CreateTouristDto })
@@ -106,7 +106,7 @@ export class TouristsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get paginated list of tourists',
+    summary: 'Get paginated list of tourists (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves all tourists with search/filtering parameters.',
   })
   @ApiOkResponse({ description: 'Paginated list of tourists' })
@@ -119,7 +119,7 @@ export class TouristsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get tourist detail by ID',
+    summary: 'Get tourist detail by ID (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves tourist profile details by tourist ID.',
   })
   @ApiOkResponse({ description: 'Tourist detail', type: TouristResponseDto })
@@ -132,7 +132,7 @@ export class TouristsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Update tourist',
+    summary: 'Update tourist (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates a tourist\'s profile. Note: passport records must be updated separately.',
   })
   @ApiBody({ type: UpdateTouristDto })
@@ -150,7 +150,7 @@ export class TouristsController {
   @Roles(Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Soft delete a tourist',
+    summary: 'Soft delete a tourist (Super Admin)',
     description: '### Access Level: **Super Admin** only (Employee)\n\nSoft deletes a tourist by tourist ID.',
   })
   @ApiNoContentResponse({ description: 'Tourist deleted successfully' })

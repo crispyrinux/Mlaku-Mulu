@@ -45,7 +45,7 @@ export class DestinationsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create a new destination',
+    summary: 'Create a new destination (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a new holiday destination.',
   })
   @ApiBody({ type: CreateDestinationDto })
@@ -59,7 +59,7 @@ export class DestinationsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get paginated list of destinations',
+    summary: 'Get paginated list of destinations (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves all destinations with paginated search/filtering parameters.',
   })
   @ApiOkResponse({ description: 'Paginated list of destinations' })
@@ -71,7 +71,7 @@ export class DestinationsController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get destination detail by ID',
+    summary: 'Get destination detail by ID (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves destination details by destination ID.',
   })
   @ApiOkResponse({ description: 'Destination detail', type: DestinationResponseDto })
@@ -84,7 +84,7 @@ export class DestinationsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Update a destination',
+    summary: 'Update a destination (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates a destination\'s properties.',
   })
   @ApiBody({ type: UpdateDestinationDto })
@@ -102,7 +102,7 @@ export class DestinationsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Soft delete a destination',
+    summary: 'Soft delete a destination (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nSoft deletes a destination by destination ID.',
   })
   @ApiNoContentResponse({ description: 'Destination deleted successfully' })

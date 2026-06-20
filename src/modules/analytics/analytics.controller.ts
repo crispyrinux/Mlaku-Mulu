@@ -29,7 +29,7 @@ export class AnalyticsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get Admin dashboard analytics metrics',
+    summary: 'Get Admin dashboard analytics metrics (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nRetrieves global operational analytics of Mlaku-Mulu including total tourists, employees, destinations, active trips, visa application status distribution, and top 5 staff by workload.',
   })
   @ApiOkResponse({
@@ -46,7 +46,7 @@ export class AnalyticsController {
   @Roles(Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get Staff dashboard analytics metrics',
+    summary: 'Get Staff dashboard analytics metrics (Staff)',
     description: '### Access Level: **Staff** (Employee)\n\nRetrieves personal operational metrics for the logged-in staff, including total assigned tourists, active trips, a list of upcoming trips for assigned tourists, and the 5 most recent visa applications processed.',
   })
   @ApiOkResponse({
@@ -63,7 +63,7 @@ export class AnalyticsController {
   @UserTypes('TOURIST')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get Tourist dashboard analytics metrics',
+    summary: 'Get Tourist dashboard analytics metrics (Tourist)',
     description: '### Access Level: **Tourist** (Tourist only)\n\nRetrieves personal travel statistics for the logged-in tourist, passport expiry countdown alert (warning if < 180 days), total trip history stats, and the latest active visa application status.',
   })
   @ApiOkResponse({

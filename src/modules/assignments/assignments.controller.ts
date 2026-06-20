@@ -43,7 +43,7 @@ export class AssignmentsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create a new assignment',
+    summary: 'Create a new assignment (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nAssigns a staff member to pend a tourist.',
   })
   @ApiBody({ type: CreateAssignmentDto })
@@ -57,7 +57,7 @@ export class AssignmentsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get paginated list of assignments',
+    summary: 'Get paginated list of assignments (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves a list of assignments with pagination filters.',
   })
   @ApiOkResponse({ description: 'Paginated list of assignments' })
@@ -69,7 +69,7 @@ export class AssignmentsController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get assignment detail by ID',
+    summary: 'Get assignment detail by ID (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves assignment details by assignment ID.',
   })
   @ApiOkResponse({ description: 'Assignment detail', type: AssignmentResponseDto })
@@ -82,7 +82,7 @@ export class AssignmentsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Delete an assignment',
+    summary: 'Delete an assignment (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nDeletes an assignment by assignment ID.',
   })
   @ApiNoContentResponse({ description: 'Assignment deleted successfully' })

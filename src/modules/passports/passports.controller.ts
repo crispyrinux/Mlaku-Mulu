@@ -40,7 +40,7 @@ export class PassportsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create a passport for a tourist',
+    summary: 'Create a passport for a tourist (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a passport record for a tourist.',
   })
   @ApiBody({ type: CreatePassportDto })
@@ -54,7 +54,7 @@ export class PassportsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get passport detail with tourist summary',
+    summary: 'Get passport detail with tourist summary (Super Admin, Admin, Staff)',
     description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves passport details and the associated tourist information by passport ID.',
   })
   @ApiOkResponse({ description: 'Passport detail', type: PassportResponseDto })
@@ -67,7 +67,7 @@ export class PassportsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Update passport',
+    summary: 'Update passport (Super Admin, Admin)',
     description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates a passport record. Note: passport number cannot be changed once created.',
   })
   @ApiBody({ type: UpdatePassportDto })
