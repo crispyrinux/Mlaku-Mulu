@@ -41,7 +41,10 @@ export class EmployeeController {
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create employee (Admin only)' })
+  @ApiOperation({
+    summary: 'Create employee',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a new employee (default role is Staff).',
+  })
   @ApiBody({ type: CreateEmployeeDto })
   @ApiOkResponse({ type: EmployeeResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -52,7 +55,10 @@ export class EmployeeController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'List employees' })
+  @ApiOperation({
+    summary: 'List employees',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves a list of all employees with pagination search filters.',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(@Query() query: EmployeeQueryDto) {
     return this.employeeService.findAll(query);
@@ -60,7 +66,10 @@ export class EmployeeController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get employee detail' })
+  @ApiOperation({
+    summary: 'Get employee detail',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves employee profile details by employee ID.',
+  })
   @ApiOkResponse({ type: EmployeeResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id') id: string) {
@@ -70,7 +79,10 @@ export class EmployeeController {
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update employee (Admin only)' })
+  @ApiOperation({
+    summary: 'Update employee',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates an employee\'s profile properties.',
+  })
   @ApiBody({ type: UpdateEmployeeDto })
   @ApiOkResponse({ type: EmployeeResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -85,7 +97,10 @@ export class EmployeeController {
   @Delete(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Soft delete employee (Admin only)' })
+  @ApiOperation({
+    summary: 'Soft delete employee',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nSoft deletes an employee by employee ID.',
+  })
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Admin only' })

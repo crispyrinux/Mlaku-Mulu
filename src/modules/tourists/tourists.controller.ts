@@ -46,7 +46,10 @@ export class TouristsController {
   @Get('me')
   @UserTypes('TOURIST')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get current authenticated tourist profile' })
+  @ApiOperation({
+    summary: 'Get current authenticated tourist profile',
+    description: '### Access Level: **Tourist** (Tourist only)\n\nRetrieves the currently logged-in tourist profile.',
+  })
   @ApiOkResponse({ description: 'Tourist profile', type: TouristResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   getProfile(@CurrentUser() tourist: any) {
@@ -56,7 +59,10 @@ export class TouristsController {
   @Get('me/trips')
   @UserTypes('TOURIST')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get current authenticated tourist trip history' })
+  @ApiOperation({
+    summary: 'Get current authenticated tourist trip history',
+    description: '### Access Level: **Tourist** (Tourist only)\n\nRetrieves the logged-in tourist\'s history of trips.',
+  })
   @ApiOkResponse({ description: 'Tourist trip history' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   getTripHistory(@CurrentUser() tourist: any) {
@@ -66,7 +72,10 @@ export class TouristsController {
   @Get('me/trips/:tripId')
   @UserTypes('TOURIST')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get details of a trip assigned to the current tourist' })
+  @ApiOperation({
+    summary: 'Get details of a trip assigned to the current tourist',
+    description: '### Access Level: **Tourist** (Tourist only)\n\nRetrieves details of a specific trip assigned to the logged-in tourist.',
+  })
   @ApiOkResponse({ description: 'Tourist trip detail' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   getTripDetail(
@@ -79,7 +88,10 @@ export class TouristsController {
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new tourist' })
+  @ApiOperation({
+    summary: 'Create a new tourist',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nRegisters a new tourist with passport details.',
+  })
   @ApiBody({ type: CreateTouristDto })
   @ApiCreatedResponse({ description: 'Tourist created successfully', type: TouristResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -93,7 +105,10 @@ export class TouristsController {
   @Get()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get paginated list of tourists' })
+  @ApiOperation({
+    summary: 'Get paginated list of tourists',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves all tourists with search/filtering parameters.',
+  })
   @ApiOkResponse({ description: 'Paginated list of tourists' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(@Query() query: TouristQueryDto) {
@@ -103,7 +118,10 @@ export class TouristsController {
   @Get(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get tourist detail by ID' })
+  @ApiOperation({
+    summary: 'Get tourist detail by ID',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves tourist profile details by tourist ID.',
+  })
   @ApiOkResponse({ description: 'Tourist detail', type: TouristResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -113,7 +131,10 @@ export class TouristsController {
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update tourist (passport managed separately)' })
+  @ApiOperation({
+    summary: 'Update tourist',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates a tourist\'s profile. Note: passport records must be updated separately.',
+  })
   @ApiBody({ type: UpdateTouristDto })
   @ApiOkResponse({ description: 'Tourist updated successfully', type: TouristResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -128,7 +149,10 @@ export class TouristsController {
   @Delete(':id')
   @Roles(Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Soft delete a tourist' })
+  @ApiOperation({
+    summary: 'Soft delete a tourist',
+    description: '### Access Level: **Super Admin** only (Employee)\n\nSoft deletes a tourist by tourist ID.',
+  })
   @ApiNoContentResponse({ description: 'Tourist deleted successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {

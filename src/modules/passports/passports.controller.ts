@@ -39,7 +39,10 @@ export class PassportsController {
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a passport for a tourist' })
+  @ApiOperation({
+    summary: 'Create a passport for a tourist',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a passport record for a tourist.',
+  })
   @ApiBody({ type: CreatePassportDto })
   @ApiCreatedResponse({ description: 'Passport created successfully', type: PassportResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -50,7 +53,10 @@ export class PassportsController {
   @Get(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get passport detail with tourist summary' })
+  @ApiOperation({
+    summary: 'Get passport detail with tourist summary',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves passport details and the associated tourist information by passport ID.',
+  })
   @ApiOkResponse({ description: 'Passport detail', type: PassportResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -61,7 +67,8 @@ export class PassportsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Update passport (passport number cannot be changed)',
+    summary: 'Update passport',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates a passport record. Note: passport number cannot be changed once created.',
   })
   @ApiBody({ type: UpdatePassportDto })
   @ApiOkResponse({ description: 'Passport updated successfully', type: PassportResponseDto })

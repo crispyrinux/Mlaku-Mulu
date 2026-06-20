@@ -42,7 +42,10 @@ export class AssignmentsController {
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new assignment' })
+  @ApiOperation({
+    summary: 'Create a new assignment',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nAssigns a staff member to pend a tourist.',
+  })
   @ApiBody({ type: CreateAssignmentDto })
   @ApiCreatedResponse({ description: 'Assignment created successfully', type: AssignmentResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -53,7 +56,10 @@ export class AssignmentsController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get paginated list of assignments' })
+  @ApiOperation({
+    summary: 'Get paginated list of assignments',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves a list of assignments with pagination filters.',
+  })
   @ApiOkResponse({ description: 'Paginated list of assignments' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(@Query() query: AssignmentQueryDto) {
@@ -62,7 +68,10 @@ export class AssignmentsController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get assignment detail by ID' })
+  @ApiOperation({
+    summary: 'Get assignment detail by ID',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves assignment details by assignment ID.',
+  })
   @ApiOkResponse({ description: 'Assignment detail', type: AssignmentResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -72,7 +81,10 @@ export class AssignmentsController {
   @Delete(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete an assignment' })
+  @ApiOperation({
+    summary: 'Delete an assignment',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nDeletes an assignment by assignment ID.',
+  })
   @ApiNoContentResponse({ description: 'Assignment deleted successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Admin only' })

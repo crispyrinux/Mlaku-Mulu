@@ -44,7 +44,10 @@ export class DestinationsController {
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new destination' })
+  @ApiOperation({
+    summary: 'Create a new destination',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a new holiday destination.',
+  })
   @ApiBody({ type: CreateDestinationDto })
   @ApiCreatedResponse({ description: 'Destination created successfully', type: DestinationResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -55,7 +58,10 @@ export class DestinationsController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get paginated list of destinations' })
+  @ApiOperation({
+    summary: 'Get paginated list of destinations',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves all destinations with paginated search/filtering parameters.',
+  })
   @ApiOkResponse({ description: 'Paginated list of destinations' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findAll(@Query() query: DestinationQueryDto) {
@@ -64,7 +70,10 @@ export class DestinationsController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get destination detail by ID' })
+  @ApiOperation({
+    summary: 'Get destination detail by ID',
+    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves destination details by destination ID.',
+  })
   @ApiOkResponse({ description: 'Destination detail', type: DestinationResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -74,7 +83,10 @@ export class DestinationsController {
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update a destination' })
+  @ApiOperation({
+    summary: 'Update a destination',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates a destination\'s properties.',
+  })
   @ApiBody({ type: UpdateDestinationDto })
   @ApiOkResponse({ description: 'Destination updated successfully', type: DestinationResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -89,7 +101,10 @@ export class DestinationsController {
   @Delete(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Soft delete a destination' })
+  @ApiOperation({
+    summary: 'Soft delete a destination',
+    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nSoft deletes a destination by destination ID.',
+  })
   @ApiNoContentResponse({ description: 'Destination deleted successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Admin only' })
