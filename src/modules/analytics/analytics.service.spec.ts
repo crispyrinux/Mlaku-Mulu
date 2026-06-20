@@ -199,7 +199,7 @@ describe('AnalyticsService', () => {
       expect(result.recentVisaApplications[0].applicationNumber).toBe('VISA-101');
       expect(result.recentVisaApplications[0].tourist.fullName).toBe('Alice');
 
-      // Verify that queries targeted the correct employee ID
+      // Verify that queries targeted the correct staff ID
       expect(mockPrisma.assignment.count).toHaveBeenCalledWith({
         where: { employeeId },
       });

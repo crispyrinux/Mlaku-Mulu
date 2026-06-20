@@ -71,7 +71,7 @@ describe('AnalyticsController', () => {
 
       mockAnalyticsService.getStaffDashboard.mockResolvedValue(mockResult);
 
-      const result = await controller.getStaffDashboard(employee);
+      const result = await controller.getStaffDashboard(Staff);
 
       expect(service.getStaffDashboard).toHaveBeenCalledTimes(1);
       expect(service.getStaffDashboard).toHaveBeenCalledWith('staff-123');

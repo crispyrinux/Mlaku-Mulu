@@ -46,7 +46,7 @@ export class TripsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new trip (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a new scheduled trip.',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nCreates a new scheduled trip.',
   })
   @ApiBody({ type: CreateTripDto })
   @ApiCreatedResponse({ description: 'Trip created successfully', type: TripResponseDto })
@@ -60,7 +60,7 @@ export class TripsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get paginated list of trips (Super Admin, Admin, Staff)',
-    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves a list of trips with search/filtering parameters.',
+    description: '### Access Level: **All Staff** (Super Admin, Admin, Staff)\n\nRetrieves a list of trips with search/filtering parameters.',
   })
   @ApiOkResponse({ description: 'Paginated list of trips' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -72,7 +72,7 @@ export class TripsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get trip detail by ID (Super Admin, Admin, Staff)',
-    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves detailed trip properties by trip ID.',
+    description: '### Access Level: **All Staff** (Super Admin, Admin, Staff)\n\nRetrieves detailed trip properties by trip ID.',
   })
   @ApiOkResponse({ description: 'Trip detail', type: TripResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -85,7 +85,7 @@ export class TripsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Update a trip (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates an existing trip\'s properties.',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nUpdates an existing trip\'s properties.',
   })
   @ApiBody({ type: UpdateTripDto })
   @ApiOkResponse({ description: 'Trip updated successfully', type: TripResponseDto })
@@ -103,7 +103,7 @@ export class TripsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Soft delete a trip (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nSoft deletes a trip record by trip ID.',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nSoft deletes a trip record by trip ID.',
   })
   @ApiNoContentResponse({ description: 'Trip deleted successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })

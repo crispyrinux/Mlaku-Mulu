@@ -41,7 +41,7 @@ export class PassportsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a passport for a tourist (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a passport record for a tourist.',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nCreates a passport record for a tourist.',
   })
   @ApiBody({ type: CreatePassportDto })
   @ApiCreatedResponse({ description: 'Passport created successfully', type: PassportResponseDto })
@@ -55,7 +55,7 @@ export class PassportsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get passport detail with tourist summary (Super Admin, Admin, Staff)',
-    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves passport details and the associated tourist information by passport ID.',
+    description: '### Access Level: **All Staff** (Super Admin, Admin, Staff)\n\nRetrieves passport details and the associated tourist information by passport ID.',
   })
   @ApiOkResponse({ description: 'Passport detail', type: PassportResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -68,7 +68,7 @@ export class PassportsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Update passport (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates a passport record. Note: passport number cannot be changed once created.',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nUpdates a passport record. Note: passport number cannot be changed once created.',
   })
   @ApiBody({ type: UpdatePassportDto })
   @ApiOkResponse({ description: 'Passport updated successfully', type: PassportResponseDto })

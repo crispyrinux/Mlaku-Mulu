@@ -5,16 +5,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../common/security/password.service';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { EmployeeQueryDto } from './dto/employee-query.dto';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { EmployeeResponseDto } from './responses/employee-response.dto';
+import { CreateStaffDto } from './dto/create-staff.dto';
+import { StaffQueryDto } from './dto/staff-query.dto';
+import { UpdateStaffDto } from './dto/update-staff.dto';
+import { StaffResponseDto } from './responses/staff-response.dto';
 import { Employee, Role, Gender } from '@prisma/client';
 import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
 import { toPaginatedResponse } from '../../common/utils/pagination.util';
 
 @Injectable()
-export class EmployeeService {
+export class StaffService {
   private readonly sortableFields = new Set([
     'id',
     'fullName',
@@ -29,30 +29,30 @@ export class EmployeeService {
   ) {}
 
   async create(
-    createEmployeeDto: CreateEmployeeDto,
-  ): Promise<EmployeeResponseDto> {
-    const existingEmployee = await this.prisma.employee.findFirst({
-      where: { email: createEmployeeDto.email, deletedAt: null },
+    createStaffDto: CreateStaffDto,
+  ): Promise<StaffResponseDto> {
+    const existingStaffMember = await this.prisma.employee.findFirst({
+      where: { email: createStaffDto.email, deletedAt: null },
     });
 
-    if (existingEmployee) {
+    if (existingStaffMember) {
       throw new BadRequestException('Email already exists');
     }
 
     const password = await this.passwordService.hash(
-      createEmployeeDto.password,
+      createStaffDto.password,
     );
 
     const employee = await this.prisma.employee.create({
       data: {
-        fullName: createEmployeeDto.fullName,
-        email: createEmployeeDto.email,
+        fullName: createStaffDto.fullName,
+        email: createStaffDto.email,
         password,
         role: 'STAFF',
-        birthDate: new Date(createEmployeeDto.birthDate),
-        gender: createEmployeeDto.gender,
-        nationality: createEmployeeDto.nationality,
-        passportNumber: createEmployeeDto.passportNumber,
+        birthDate: new Date(createStaffDto.birthDate),
+        gender: createStaffDto.gender,
+        nationality: createStaffDto.nationality,
+        passportNumber: createStaffDto.passportNumber,
         isActive: true,
       },
     });
@@ -60,21 +60,53 @@ export class EmployeeService {
     return this.toResponseDto(employee);
   }
 
-  async findOne(id: string): Promise<EmployeeResponseDto> {
+  async createAdmin(
+    createStaffDto: CreateStaffDto,
+  ): Promise<StaffResponseDto> {
+    const existingEmployee = await this.prisma.employee.findFirst({
+      where: { email: createStaffDto.email, deletedAt: null },
+    });
+
+    if (existingEmployee) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const password = await this.passwordService.hash(
+      createStaffDto.password,
+    );
+
+    const employee = await this.prisma.employee.create({
+      data: {
+        fullName: createStaffDto.fullName,
+        email: createStaffDto.email,
+        password,
+        role: 'ADMIN',
+        birthDate: new Date(createStaffDto.birthDate),
+        gender: createStaffDto.gender,
+        nationality: createStaffDto.nationality,
+        passportNumber: createStaffDto.passportNumber,
+        isActive: true,
+      },
+    });
+
+    return this.toResponseDto(employee);
+  }
+
+  async findOne(id: string): Promise<StaffResponseDto> {
     const employee = await this.prisma.employee.findFirst({
       where: { id, deletedAt: null },
     });
 
     if (!employee) {
-      throw new NotFoundException('Employee not found');
+      throw new NotFoundException('Staff not found');
     }
 
     return this.toResponseDto(employee);
   }
 
   async findAll(
-    query: EmployeeQueryDto,
-  ): Promise<PaginatedResponse<EmployeeResponseDto>> {
+    query: StaffQueryDto,
+  ): Promise<PaginatedResponse<StaffResponseDto>> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const search = query.search?.trim();
@@ -107,51 +139,51 @@ export class EmployeeService {
 
   async update(
     id: string,
-    updateEmployeeDto: UpdateEmployeeDto,
-  ): Promise<EmployeeResponseDto> {
+    updateStaffDto: UpdateStaffDto,
+  ): Promise<StaffResponseDto> {
     const employee = await this.prisma.employee.findFirst({
       where: { id, deletedAt: null },
     });
 
     if (!employee) {
-      throw new NotFoundException('Employee not found');
+      throw new NotFoundException('Staff not found');
     }
 
-    if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
-      const existingEmployee = await this.prisma.employee.findFirst({
-        where: { email: updateEmployeeDto.email, deletedAt: null },
+    if (updateStaffDto.email && updateStaffDto.email !== employee.email) {
+      const existingStaffMember = await this.prisma.employee.findFirst({
+        where: { email: updateStaffDto.email, deletedAt: null },
       });
 
-      if (existingEmployee) {
+      if (existingStaffMember) {
         throw new BadRequestException('Email already exists');
       }
     }
 
-    const password = updateEmployeeDto.password
-      ? await this.passwordService.hash(updateEmployeeDto.password)
+    const password = updateStaffDto.password
+      ? await this.passwordService.hash(updateStaffDto.password)
       : undefined;
 
     const updatedEmployee = await this.prisma.employee.update({
       where: { id },
       data: {
-        ...(updateEmployeeDto.fullName !== undefined
-          ? { fullName: updateEmployeeDto.fullName }
+        ...(updateStaffDto.fullName !== undefined
+          ? { fullName: updateStaffDto.fullName }
           : {}),
-        ...(updateEmployeeDto.email !== undefined
-          ? { email: updateEmployeeDto.email }
+        ...(updateStaffDto.email !== undefined
+          ? { email: updateStaffDto.email }
           : {}),
         ...(password !== undefined ? { password } : {}),
-        ...(updateEmployeeDto.birthDate !== undefined
-          ? { birthDate: new Date(updateEmployeeDto.birthDate) }
+        ...(updateStaffDto.birthDate !== undefined
+          ? { birthDate: new Date(updateStaffDto.birthDate) }
           : {}),
-        ...(updateEmployeeDto.gender !== undefined
-          ? { gender: updateEmployeeDto.gender }
+        ...(updateStaffDto.gender !== undefined
+          ? { gender: updateStaffDto.gender }
           : {}),
-        ...(updateEmployeeDto.nationality !== undefined
-          ? { nationality: updateEmployeeDto.nationality }
+        ...(updateStaffDto.nationality !== undefined
+          ? { nationality: updateStaffDto.nationality }
           : {}),
-        ...(updateEmployeeDto.passportNumber !== undefined
-          ? { passportNumber: updateEmployeeDto.passportNumber }
+        ...(updateStaffDto.passportNumber !== undefined
+          ? { passportNumber: updateStaffDto.passportNumber }
           : {}),
       },
     });
@@ -165,7 +197,7 @@ export class EmployeeService {
     });
 
     if (!employee) {
-      throw new NotFoundException('Employee not found');
+      throw new NotFoundException('Staff not found');
     }
 
     await this.prisma.employee.update({
@@ -174,7 +206,7 @@ export class EmployeeService {
     });
   }
 
-  private toResponseDto(employee: Employee): EmployeeResponseDto {
+  private toResponseDto(employee: Employee): StaffResponseDto {
     return {
       id: employee.id,
       fullName: employee.fullName,

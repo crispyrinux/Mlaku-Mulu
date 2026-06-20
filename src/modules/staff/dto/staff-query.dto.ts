@@ -2,7 +2,7 @@ import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 import { IsIn, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class EmployeeQueryDto extends PaginationQueryDto {
+export class StaffQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     enum: ['id', 'fullName', 'email', 'createdAt', 'updatedAt'],
     example: 'createdAt',

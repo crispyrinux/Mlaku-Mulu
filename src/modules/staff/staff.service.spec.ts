@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EmployeeService } from './employee.service';
+import { StaffService } from './staff.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PasswordService } from '../../common/security/password.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Role, Gender } from '@prisma/client';
 
-describe('EmployeeService', () => {
-  let service: EmployeeService;
+describe('StaffService', () => {
+  let service: StaffService;
   let prisma: PrismaService;
   let passwordService: PasswordService;
 
@@ -27,13 +27,13 @@ describe('EmployeeService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        EmployeeService,
+        StaffService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: PasswordService, useValue: mockPasswordService },
       ],
     }).compile();
 
-    service = module.get<EmployeeService>(EmployeeService);
+    service = module.get<StaffService>(StaffService);
     prisma = module.get<PrismaService>(PrismaService);
     passwordService = module.get<PasswordService>(PasswordService);
   });
@@ -43,7 +43,7 @@ describe('EmployeeService', () => {
   });
 
   describe('create', () => {
-    it('should create an employee successfully', async () => {
+    it('should create a staff successfully', async () => {
       const createDto = {
         fullName: 'Jane Doe',
         email: 'jane@test.com',

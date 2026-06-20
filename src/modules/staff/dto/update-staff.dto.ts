@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { Gender } from '@prisma/client';
 
-export class UpdateEmployeeDto {
+export class UpdateStaffDto {
   @ApiPropertyOptional({
     example: 'John Doe',
     description: 'Full name of the employee',

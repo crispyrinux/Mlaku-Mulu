@@ -34,8 +34,8 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Employee or Tourist login (Public)',
-    description: '### Access Level: **Public** (No authentication required)\n\nAuthenticates user credentials (either Employee or Tourist) and issues a JWT token pair.',
+    summary: 'Staff or Tourist login (Public)',
+    description: '### Access Level: **Public** (No authentication required)\n\nAuthenticates user credentials (either Staff or Tourist) and issues a JWT token pair.',
   })
   @ApiBody({ type: LoginDto })
   @ApiOkResponse({
@@ -92,8 +92,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Get current authenticated employee profile (Super Admin, Admin, Staff)',
-    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves the currently logged-in employee profile.',
+    summary: 'Get current authenticated staff profile (Super Admin, Admin, Staff)',
+    description: '### Access Level: **All Staff** (Super Admin, Admin, Staff)\n\nRetrieves the currently logged-in staff profile.',
   })
   @ApiOkResponse({ description: 'Employee profile' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })

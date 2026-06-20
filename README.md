@@ -12,7 +12,7 @@ Backend API untuk **Tourism Management System (Mlaku-Mulu)** yang dirancang meng
 
 ## Fitur Utama
 
-*   **Autentikasi Ganda (Employee & Tourist)**: Flow login terpisah antara karyawan (Employee) dan wisatawan (Tourist) menggunakan JWT Access Token (durasi 15 menit).
+*   **Autentikasi Ganda (Staff & Tourist)**: Flow login terpisah antara karyawan (Staff) dan wisatawan (Tourist) menggunakan JWT Access Token (durasi 15 menit).
 *   **Refresh Token Rotation (RTR)**: Sistem penyegaran token yang aman dengan menyimpan hash token di database dan merotasinya setiap kali digunakan (durasi 30 hari). Re-use token yang sudah kedaluwarsa/direvok akan otomatis menghapus seluruh session aktif untuk mencegah pencurian token.
 *   **Portal Mandiri Wisatawan (Tourist Self-Service)**: Wisatawan dapat melihat profil diri, riwayat perjalanan, dan detail perjalanan yang ditugaskan secara aman (dilengkapi proteksi IDOR).
 *   **Sistem Alur Visa (Visa State-Machine)**: Alur pengajuan visa dengan transisi status yang ketat: `DRAFT` &rarr; `SUBMITTED` &rarr; `IN_REVIEW` &rarr; `APPROVED`/`REJECTED`/`CANCELLED`. Nomor pengajuan dihasilkan secara otomatis per tahun (`VA-YYYY-000001`).
@@ -20,7 +20,7 @@ Backend API untuk **Tourism Management System (Mlaku-Mulu)** yang dirancang meng
     *   **Admin/Super Admin**: Statistik bisnis makro, demografi wisatawan, sebaran visa, dan metrik kinerja/beban staf.
     *   **Staff**: Metrik pendampingan personal, trip asuhan mendatang, dan pemantauan berkas visa yang sedang ditangani.
     *   **Tourist**: Portal notifikasi cerdas untuk sisa masa aktif paspor dan rangkuman riwayat trip.
-*   **Soft Delete**: Fitur penghapusan logis (*soft delete*) di entitas utama (`Employee`, `Tourist`, `VisaApplication`, `Destination`, `Trip`) untuk menjaga integritas data dan riwayat audit.
+*   **Soft Delete**: Fitur penghapusan logis (*soft delete*) di entitas utama (`Staff`, `Tourist`, `VisaApplication`, `Destination`, `Trip`) untuk menjaga integritas data dan riwayat audit.
 *   **Rate Limiting Global & Spesifik**: Batasan request global (default 100 req/menit) dengan proteksi lebih ketat pada endpoint autentikasi (5 req/menit) menggunakan `@nestjs/throttler`.
 *   **Hardening Keamanan**: Header keamanan HTTP bawaan menggunakan Helmet, dynamic CORS berbasis whitelist origin, enkripsi password menggunakan Bcrypt, dan validasi DTO ketat menggunakan `class-validator`.
 
@@ -48,7 +48,7 @@ src/
 ├── config/             # Konfigurasi aplikasi (app, jwt, database, swagger, env validation)
 ├── modules/            # Modul fitur / domain bisnis utama
 │   ├── auth/           # Kontrol login, logout, refresh token, & guard autentikasi
-│   ├── employee/       # Manajemen staf & peran (Super Admin, Admin, Staff)
+│   ├── staff/       # Manajemen staf & peran (Super Admin, Admin, Staff)
 │   ├── tourists/       # Manajemen profil wisatawan & portal self-service
 │   ├── passports/      # Data paspor wisatawan (relasi 1:1)
 │   ├── destinations/   # Pengelolaan destinasi wisata
@@ -72,7 +72,7 @@ Seluruh dokumentasi API interaktif, skema DTO, serta contoh request/response dis
 ### Ringkasan Endpoint Per Modul
 
 *   **Auth Module** (`/auth/*`): Login ganda (staf & wisatawan), logout aman (revok token), dan rotasi token (`/refresh`).
-*   **Employee Module** (`/employees/*`): Manajemen staf (CRUD) khusus untuk peran Super Admin & Admin.
+*   **Staff Module** (`/staffs/*`): Manajemen staf (CRUD) khusus untuk peran Super Admin & Admin.
 *   **Tourists Module** (`/tourists/*`):
     *   Kelola wisatawan (CRUD oleh staf).
     *   Akses mandiri wisatawan (`/tourists/me`, `/tourists/me/trips`, `/tourists/me/trips/:tripId`).

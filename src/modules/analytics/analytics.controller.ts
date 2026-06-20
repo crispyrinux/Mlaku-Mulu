@@ -30,7 +30,7 @@ export class AnalyticsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get Admin dashboard analytics metrics (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nRetrieves global operational analytics of Mlaku-Mulu including total tourists, employees, destinations, active trips, visa application status distribution, and top 5 staff by workload.',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nRetrieves global operational analytics of Mlaku-Mulu including total tourists, employees, destinations, active trips, visa application status distribution, and top 5 staff by workload.',
   })
   @ApiOkResponse({
     type: AdminAnalyticsResponseDto,
@@ -47,7 +47,7 @@ export class AnalyticsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get Staff dashboard analytics metrics (Staff)',
-    description: '### Access Level: **Staff** (Employee)\n\nRetrieves personal operational metrics for the logged-in staff, including total assigned tourists, active trips, a list of upcoming trips for assigned tourists, and the 5 most recent visa applications processed.',
+    description: '### Access Level: **Staff** (Staff)\n\nRetrieves personal operational metrics for the logged-in staff, including total assigned tourists, active trips, a list of upcoming trips for assigned tourists, and the 5 most recent visa applications processed.',
   })
   @ApiOkResponse({
     type: StaffAnalyticsResponseDto,

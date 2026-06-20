@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
 import { Gender } from '@prisma/client';
 
-export class CreateEmployeeDto {
+export class CreateStaffDto {
   @ApiProperty({
     example: 'John Doe',
     description: 'Full name of the employee',

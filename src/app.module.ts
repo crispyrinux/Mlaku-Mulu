@@ -8,7 +8,7 @@ import { PrismaExceptionFilter } from './common/exceptions/prisma-exception.filt
 import { ThrottlerExceptionFilter } from './common/exceptions/throttler-exception.filter';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
-import { EmployeeModule } from './modules/employee/employee.module';
+import { StaffModule } from './modules/staff/staff.module';
 import { TouristsModule } from './modules/tourists/tourists.module';
 import { PassportsModule } from './modules/passports/passports.module';
 import { DestinationsModule } from './modules/destinations/destinations.module';
@@ -38,7 +38,7 @@ import { AppService } from './app.service';
     }),
     PrismaModule,
     AuthModule,
-    EmployeeModule,
+    StaffModule,
     TouristsModule,
     PassportsModule,
     DestinationsModule,

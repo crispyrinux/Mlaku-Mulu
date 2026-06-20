@@ -5,7 +5,7 @@ import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 export class AssignmentQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'Filter by employee ID',
+    description: 'Filter by staff ID',
   })
   @IsOptional()
   @IsUUID()

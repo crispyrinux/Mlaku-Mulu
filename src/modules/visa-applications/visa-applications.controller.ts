@@ -50,7 +50,7 @@ export class VisaApplicationsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new visa application (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nCreates a new visa application record.',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nCreates a new visa application record.',
   })
   @ApiBody({ type: CreateVisaApplicationDto })
   @ApiCreatedResponse({ description: 'Visa application created successfully', type: VisaApplicationResponseDto })
@@ -67,7 +67,7 @@ export class VisaApplicationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get paginated list of visa applications (Super Admin, Admin, Staff)',
-    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves all visa applications with search/filtering parameters.',
+    description: '### Access Level: **All Staff** (Super Admin, Admin, Staff)\n\nRetrieves all visa applications with search/filtering parameters.',
   })
   @ApiOkResponse({ description: 'Paginated list of visa applications' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -80,7 +80,7 @@ export class VisaApplicationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get visa application detail by ID (Super Admin, Admin, Staff)',
-    description: '### Access Level: **All Employees** (Super Admin, Admin, Staff)\n\nRetrieves visa application details (including tourist and passport details) by application ID.',
+    description: '### Access Level: **All Staff** (Super Admin, Admin, Staff)\n\nRetrieves visa application details (including tourist and passport details) by application ID.',
   })
   @ApiOkResponse({
     description: 'Visa application detail (includes tourist and passport)',
@@ -96,7 +96,7 @@ export class VisaApplicationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Update visa application (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates a visa application record. Note: This action is only allowed if the application is in DRAFT status.',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nUpdates a visa application record. Note: This action is only allowed if the application is in DRAFT status.',
   })
   @ApiBody({ type: UpdateVisaApplicationDto })
   @ApiOkResponse({ description: 'Visa application updated successfully', type: VisaApplicationResponseDto })
@@ -110,11 +110,11 @@ export class VisaApplicationsController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Soft delete a visa application (Super Admin)',
-    description: '### Access Level: **Super Admin** only (Employee)\n\nSoft deletes a visa application record by application ID.',
+    summary: 'Soft delete a visa application (Super Admin, Admin)',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nSoft deletes a visa application record by application ID.',
   })
   @ApiNoContentResponse({
     description: 'Visa application deleted successfully',
@@ -129,7 +129,7 @@ export class VisaApplicationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Change the status of a visa application (Super Admin, Admin)',
-    description: '### Access Level: **Super Admin** & **Admin** (Employee)\n\nUpdates the status of a visa application (state-machine transition).',
+    description: '### Access Level: **Super Admin** & **Admin** (Staff)\n\nUpdates the status of a visa application (state-machine transition).',
   })
   @ApiBody({ type: UpdateVisaApplicationStatusDto })
   @ApiOkResponse({

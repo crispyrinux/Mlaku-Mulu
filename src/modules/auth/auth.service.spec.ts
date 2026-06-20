@@ -169,7 +169,7 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should throw UnauthorizedException for invalid password (employee)', async () => {
+    it('should throw UnauthorizedException for invalid password (Staff)', async () => {
       const mockEmployee = {
         id: 'employee-id',
         email: 'admin@mlakumulu.com',
