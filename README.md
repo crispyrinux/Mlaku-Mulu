@@ -1,13 +1,18 @@
 # Tourism Management Backend
 
-A production-grade NestJS backend system built with Prisma ORM and PostgreSQL for managing tourists, passport details, and visa applications. The application implements secure JWT authentication, refresh token rotation, global/route-specific rate limiting, secure Helmet headers, dynamic CORS, soft deletes, and Swagger documentation.
+A production-grade NestJS backend system built with Prisma ORM and PostgreSQL for managing destinations, trips, assignments, tourists, passport details, and visa applications. The application implements secure employee and tourist authentication, refresh token rotation, global/route-specific rate limiting, secure Helmet headers, dynamic CORS, soft deletes, and Swagger documentation.
 
 ---
 
 ## Features
 
-* **JWT-Based Authentication**: Secure login flow for employees using access tokens (expiring in 15 minutes).
-* **Refresh Token Rotation**: Enhanced security via stateful refresh tokens stored in the database as cryptographically hashed values, rotated automatically on token refresh (expiring in 30 days).
+* **Dual-User Authentication (Employee & Tourist)**: Secure login flow using JWT access tokens (expiring in 15 minutes).
+* **Refresh Token Rotation**: Enhanced security via stateful refresh tokens stored in the database as cryptographically hashed values, rotated automatically on token refresh (expiring in 30 days) for both employees and tourists.
+* **Tourist Self-Service Portal**:
+  * Secure endpoints mapping to JWT claims to prevent IDOR vulnerabilities.
+  * Tourist profile retrieval (`GET /tourists/me`).
+  * Assigned trip history list (`GET /tourists/me/trips`).
+  * Specific trip detail checks (`GET /tourists/me/trips/:tripId`).
 * **Global & Route-Specific Rate Limiting**: Standard rate limiting applied globally (default 100 requests / minute) with stricter overrides on login and refresh endpoints (5 attempts / minute) using `@nestjs/throttler`.
 * **Helmet Security Headers**: Production-grade HTTP headers applied globally (defaults for X-Content-Type-Options, X-Frame-Options, Referrer-Policy, etc.).
 * **CORS Hardening**: Strict, environment-driven origin mapping supporting multiple origins. Defaults to safe localhost values for local development.
@@ -26,7 +31,7 @@ A production-grade NestJS backend system built with Prisma ORM and PostgreSQL fo
       }
     }
     ```
-  * Case-insensitive queries for Employee and Tourist text searches.
+  * Case-insensitive queries for Employee, Tourist, and Destination text searches.
   * Explicit sorting filters (`sortBy`, `sortOrder` defaulting to `createdAt desc`).
   * Tourist status filtering based on the `ACTIVE` | `INACTIVE` | `BLACKLISTED` state.
 * **Visa Application Module**: State-machine-driven visa workflow:
@@ -34,7 +39,7 @@ A production-grade NestJS backend system built with Prisma ORM and PostgreSQL fo
   * Unique application numbers generated sequentially per calendar year (`VA-YYYY-000001`).
   * Automatic timestamps for submission and decision events.
   * Modification limits restricted exclusively to the `DRAFT` status.
-* **Soft Delete Logic**: Safety measure preventing permanent records deletion on critical entities (`Employee`, `Tourist`, `VisaApplication`).
+* **Soft Delete Logic**: Safety measure preventing permanent records deletion on critical entities (`Employee`, `Tourist`, `VisaApplication`, `Destination`, `Trip`).
 * **Audit Trail**: Tracking creation and update logs of tourists and visa applications by capturing responsible employee IDs (`createdByEmployeeId`, `updatedByEmployeeId`).
 * **Global Exception Filters**: Custom filters intercepting database exceptions (Prisma errors) and rate limiting violations (`ThrottlerException`) to return consistent, user-friendly JSON payloads.
 
@@ -63,8 +68,10 @@ A production-grade NestJS backend system built with Prisma ORM and PostgreSQL fo
 ```text
 src/
 ├── common/
-│   ├── dto/             # Base PaginationQueryDto for validation inheritance
+│   ├── decorators/      # Roles and UserTypes decorators
+│   ├── DTO/             # Base PaginationQueryDto for validation inheritance
 │   ├── exceptions/      # PrismaExceptionFilter and ThrottlerExceptionFilter
+│   ├── guards/          # RolesGuard enforcing user type and role constraints
 │   ├── interfaces/      # PaginatedResponse<T> interface layout
 │   ├── security/        # Cryptographic password hashing helper service
 │   └── utils/           # pagination.util.ts helper functions
@@ -76,12 +83,12 @@ src/
 ├── modules/
 │   ├── auth/            # Auth controllers, login, guards, strategies, and decorators
 │   ├── employee/        # Employee management endpoints and database entities
-│   ├── tourists/        # Tourist profiles and management endpoints
+│   ├── tourists/        # Tourist profiles, self-service endpoints, and management
 │   ├── passports/       # Decoupled passport details (1:1 with Tourist)
-│   ├── visa-applications/ # Core visa application workflow and query handlers
-│   ├── destinations/    # Destination management and catalog
-│   ├── trips/           # Trip scheduling and management
-│   └── assignments/     # Tourist assignment to trips/employees
+│   ├── destinations/    # Destination management endpoints and database entities
+│   ├── trips/           # Trip scheduling and participant queries
+│   ├── assignments/     # Penugasan staf (Employee) ke wisatawan (Tourist)
+│   └── visa-applications/ # Core visa application workflow and query handlers
 ├── app.module.ts        # Main application module registering config and submodules
 └── main.ts              # Entry point starting the NestJS HTTP server
 ```
@@ -91,7 +98,7 @@ src/
 ## Domain Modules
 
 ### Auth Module
-* **Responsibilities**: Handles employee login, logout, profile discovery (`/me`), and secure token refreshing. Implements refresh token database revocation and rotation checks. Strict rate limit applied (5 attempts / minute).
+* **Responsibilities**: Handles employee and tourist login, logout, employee profile discovery (`/me`), and secure token refreshing. Implements refresh token database revocation and rotation checks. Strict rate limit applied (5 attempts / minute).
 * **Endpoints**:
   * `POST /auth/login`
   * `POST /auth/refresh`
@@ -99,7 +106,7 @@ src/
   * `GET /auth/me`
 
 ### Employee Module
-* **Responsibilities**: Facilitates employee profile updates, lists, and metadata modifications by super admins. Exposes paginated and sorted query results.
+* **Responsibilities**: Facilitates employee profile updates, lists, and metadata modifications by admins. Exposes paginated and sorted query results.
 * **Endpoints**:
   * `POST /employees`
   * `GET /employees`
@@ -108,8 +115,11 @@ src/
   * `DELETE /employees/:id`
 
 ### Tourists Module
-* **Responsibilities**: Manages tourist profiles. On tourist creation, creates a nested passport record in a single transaction. Exposes paginated list results supporting sorting, text search, and status filtering.
+* **Responsibilities**: Manages tourist profiles, registrations, and self-service profile/trip queries. Exposes paginated list results supporting sorting, text search, and status filtering.
 * **Endpoints**:
+  * `GET /tourists/me` (Tourist only)
+  * `GET /tourists/me/trips` (Tourist only)
+  * `GET /tourists/me/trips/:tripId` (Tourist only)
   * `POST /tourists`
   * `GET /tourists`
   * `GET /tourists/:id`
@@ -123,6 +133,32 @@ src/
   * `GET /passports/:id`
   * `PATCH /passports/:id`
 
+### Destinations Module
+* **Responsibilities**: Manages destinations, supporting creation, updating, retrieval, and soft deletion.
+* **Endpoints**:
+  * `POST /destinations`
+  * `GET /destinations`
+  * `GET /destinations/:id`
+  * `PATCH /destinations/:id`
+  * `DELETE /destinations/:id`
+
+### Trips Module
+* **Responsibilities**: Manages schedules for pariwisata trips, including destination links and status updates.
+* **Endpoints**:
+  * `POST /trips`
+  * `GET /trips`
+  * `GET /trips/:id`
+  * `PATCH /trips/:id`
+  * `DELETE /trips/:id`
+
+### Assignments Module
+* **Responsibilities**: Records tourist penugasan assignments connecting employees to tourist pendampingan tasks.
+* **Endpoints**:
+  * `POST /assignments`
+  * `GET /assignments`
+  * `GET /assignments/:id`
+  * `DELETE /assignments/:id`
+
 ### Visa Applications Module
 * **Responsibilities**: Controls the primary business process. Generates application numbers, manages state transitions, and enforces audit constraints. Exposes paginated query results with status/country filtering.
 * **Endpoints**:
@@ -133,179 +169,33 @@ src/
   * `DELETE /api/v1/visa-applications/:id`
   * `PATCH /api/v1/visa-applications/:id/status`
 
-### Destinations Module
-* **Responsibilities**: Manages destination master data.
-* **Endpoints**:
-  * `POST /destinations`
-  * `GET /destinations`
-  * `GET /destinations/:id`
-  * `PATCH /destinations/:id`
-  * `DELETE /destinations/:id`
-
-### Trips Module
-* **Responsibilities**: Manages trip packages and scheduling.
-* **Endpoints**:
-  * `POST /trips`
-  * `GET /trips`
-  * `GET /trips/:id`
-  * `PATCH /trips/:id`
-  * `DELETE /trips/:id`
-
-### Assignments Module
-* **Responsibilities**: Manages assignments.
-* **Endpoints**:
-  * `POST /assignments`
-  * `GET /assignments`
-  * `GET /assignments/:id`
-  * `DELETE /assignments/:id`
-
----
-
-## Database Design
-
-```mermaid
-erDiagram
-    Employee ||--o{ RefreshToken : has
-    Employee ||--o{ Tourist : creates
-    Employee ||--o{ Tourist : updates
-    Employee ||--o{ VisaApplication : creates
-    Employee ||--o{ VisaApplication : updates
-    Tourist ||--|| Passport : has
-    Tourist ||--o{ VisaApplication : applies
-    
-    Employee {
-        uuid id PK
-        string fullName
-        string email UK
-        string password
-        Role role
-        datetime birthDate
-        Gender gender
-        string nationality
-        string passportNumber
-        boolean isActive
-        datetime createdAt
-        datetime updatedAt
-        datetime deletedAt
-    }
-    
-    RefreshToken {
-        uuid id PK
-        string tokenHash
-        uuid employeeId FK
-        datetime expiresAt
-        datetime revokedAt
-        datetime createdAt
-        datetime updatedAt
-    }
-    
-    Tourist {
-        uuid id PK
-        string fullName
-        datetime birthDate
-        Gender gender
-        string nationality
-        string email
-        string phone
-        string notes
-        TouristStatus status
-        uuid createdByEmployeeId FK
-        uuid updatedByEmployeeId FK
-        datetime createdAt
-        datetime updatedAt
-        datetime deletedAt
-    }
-    
-    Passport {
-        uuid id PK
-        uuid touristId FK UK
-        string passportNumber UK
-        datetime issueDate
-        datetime expiryDate
-        string placeOfIssue
-        datetime createdAt
-        datetime updatedAt
-    }
-    
-    VisaApplication {
-        uuid id PK
-        string applicationNumber UK
-        uuid touristId FK
-        string country
-        string visaType
-        VisaApplicationStatus status
-        datetime submissionDate
-        datetime decisionDate
-        string notes
-        uuid createdByEmployeeId FK
-        uuid updatedByEmployeeId FK
-        datetime createdAt
-        datetime updatedAt
-        datetime deletedAt
-    }
-```
-
-### Entities
-
-#### Employee
-* **Purpose**: Represents system users (Staff, Admins, Super Admins).
-* **Important fields**: `email` (unique), `password` (hashed), `role` (`SUPER_ADMIN`, `ADMIN`, `STAFF`).
-* **Relationships**:
-  * Has many `refreshTokens`.
-  * Has many `createdTourists` and `updatedTourists`.
-  * Has many `createdVisaApplications` and `updatedVisaApplications`.
-
-#### Tourist
-* **Purpose**: Represents clients booking travel and applying for visas.
-* **Important fields**: `fullName`, `status` (`ACTIVE`, `INACTIVE`, `BLACKLISTED`), `createdByEmployeeId`.
-* **Relationships**:
-  * Has one `passport` (`1:1`).
-  * Has many `visaApplications` (`1:N`).
-
-#### Passport
-* **Purpose**: Decoupled travel document details.
-* **Important fields**: `passportNumber` (unique), `touristId` (unique).
-* **Relationships**:
-  * Belongs to a single `tourist`.
-
-#### VisaApplication
-* **Purpose**: Tracks travel authorization processes.
-* **Important fields**: `applicationNumber` (unique, generated), `status` (`DRAFT`, `SUBMITTED`, `IN_REVIEW`, `APPROVED`, `REJECTED`, `CANCELLED`).
-* **Relationships**:
-  * Belongs to a `tourist`.
-  * Created and updated by `employee`.
-
-#### RefreshToken
-* **Purpose**: Tracks valid active sessions for Token Rotation.
-* **Important fields**: `tokenHash` (cryptographically hashed), `employeeId`, `expiresAt`, `revokedAt`.
-
 ---
 
 ## Authentication Flow
 
 ```text
-  [ Employee Credentials ]
-            │
-            ▼
-    POST /auth/login  <─── [Rate Limit: 5 requests / min]
-            │
-  ┌─────────┴─────────┐
-  ▼                   ▼
+  [ User Credentials ]
+           │
+           ▼
+   POST /auth/login  <─── [Rate Limit: 5 requests / min]
+           │
+  ┌────────┴────────┐
+  ▼                 ▼
 [ 200 OK ]      [ 401 Unauthorized ]
-  │                   │
-  ├──► Access Token   └──► "Invalid credentials"
+  │                 │
+  ├──► Access Token └──► "Invalid credentials"
   └──► Refresh Token
-            │
+           │
   (Used for access)
-            │
-            ▼
+           │
+           ▼
     Protected APIs (Authorization Bearer <JWT>)
 ```
 
 ### Refresh Token Rotation (RTR)
 When access tokens expire (15 min), clients call `/auth/refresh` sending the raw refresh token:
 1. System validates the token signature and expiration.
-2. Compares hashed input token with database logs.
+2. Compares hashed input token with database logs (checks both `employeeId` and `touristId` relations).
 3. Revokes the old refresh token (`revokedAt = now()`).
 4. Generates a new access token and a new refresh token.
 5. Persists the new refresh token hash and returns both tokens.
@@ -315,48 +205,50 @@ When access tokens expire (15 min), clients call `/auth/refresh` sending the raw
 
 ## Authorization
 
-All routes are protected by the `JwtAuthGuard` except public endpoints. The codebase has a defined `RolesGuard` mapping `SUPER_ADMIN`, `ADMIN`, and `STAFF` roles.
+All routes are protected by the `JwtAuthGuard` and the `RolesGuard`. The system is **secure by default**; if no `@UserTypes()` metadata is defined, it defaults to Employee-only access. 
 
-| Endpoint | Authentication | Rate Limit | Allowed Roles |
-| -------- | -------------- | ---------- | ------------- |
+| Endpoint | Authentication | Rate Limit | Allowed User Types / Roles |
+| -------- | -------------- | ---------- | -------------------------- |
 | `POST /auth/login` | Public | 5 req / min | Anyone |
 | `POST /auth/refresh` | Public | 5 req / min | Anyone |
-| `POST /auth/logout` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /auth/me` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /employees` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /employees` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /employees/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /employees/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `DELETE /employees/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /tourists` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /tourists` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /tourists/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /tourists/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `DELETE /tourists/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /passports` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /passports/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /passports/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /api/v1/visa-applications` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /api/v1/visa-applications` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `DELETE /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /api/v1/visa-applications/:id/status`| JWT Bearer| 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `POST /destinations` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
-| `GET /destinations` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /destinations/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /destinations/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
-| `DELETE /destinations/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
-| `POST /trips` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
-| `GET /trips` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /trips/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `PATCH /trips/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
-| `DELETE /trips/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
-| `POST /assignments` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
-| `GET /assignments` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `GET /assignments/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
-| `DELETE /assignments/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
-
+| `POST /auth/logout` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role), `TOURIST` |
+| `GET /auth/me` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `GET /tourists/me` | JWT Bearer | 100 req / min | `TOURIST` |
+| `GET /tourists/me/trips` | JWT Bearer | 100 req / min | `TOURIST` |
+| `GET /tourists/me/trips/:tripId` | JWT Bearer | 100 req / min | `TOURIST` |
+| `POST /employees` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `GET /employees` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `GET /employees/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `PATCH /employees/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `DELETE /employees/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `POST /tourists` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `GET /tourists` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `GET /tourists/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `PATCH /tourists/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `DELETE /tourists/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`) |
+| `POST /passports` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `GET /passports/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `PATCH /passports/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `POST /destinations` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `GET /destinations` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `GET /destinations/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `PATCH /destinations/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `DELETE /destinations/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `POST /trips` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `GET /trips` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `GET /trips/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `PATCH /trips/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `DELETE /trips/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `POST /assignments` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `GET /assignments` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `GET /assignments/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `DELETE /assignments/:id` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `POST /api/v1/visa-applications` | JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `GET /api/v1/visa-applications` | JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `GET /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `EMPLOYEE` (Any Role) |
+| `PATCH /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
+| `DELETE /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`) |
+| `PATCH /api/v1/visa-applications/:id/status`| JWT Bearer| 100 req / min | `EMPLOYEE` (`SUPER_ADMIN`, `ADMIN`) |
 
 ---
 
@@ -365,11 +257,11 @@ All routes are protected by the `JwtAuthGuard` except public endpoints. The code
 ### Auth
 
 #### POST /auth/login
-* **Description**: Logs in an employee and returns JWT access & refresh tokens.
+* **Description**: Logs in an employee or tourist and returns JWT access & refresh tokens.
 * **Request**:
   ```json
   {
-    "email": "admin@example.com",
+    "email": "tourist@example.com",
     "password": "password123"
   }
   ```
@@ -399,372 +291,61 @@ All routes are protected by the `JwtAuthGuard` except public endpoints. The code
 
 #### POST /auth/logout
 * **Description**: Revokes all refresh tokens linked to the user session.
-* **Request**: Empty body (bearer token header required).
 * **Response**: `204 No Content`
 
 #### GET /auth/me
 * **Description**: Retrieves current logged-in employee profile.
-* **Response**:
-  ```json
-  {
-    "id": "c1611a91-4d33-4bb4-ac81-ec0e02613cfb",
-    "fullName": "System Admin",
-    "email": "admin@example.com",
-    "role": "SUPER_ADMIN",
-    "birthDate": "1990-01-01T00:00:00.000Z",
-    "gender": "MALE",
-    "nationality": "Indonesian",
-    "passportNumber": "X1234567",
-    "isActive": true,
-    "createdAt": "2026-06-19T00:00:00.000Z",
-    "updatedAt": "2026-06-19T00:00:00.000Z"
-  }
-  ```
 
 ---
 
-### Employees
+### Tourists Self-Service
 
-#### POST /employees
-* **Description**: Creates a new employee profile (default role `STAFF`).
-* **Request**:
+#### GET /tourists/me
+* **Description**: Retrieves the logged-in tourist's own profile.
+* **Response**:
   ```json
   {
-    "fullName": "Jane Doe",
-    "email": "jane@example.com",
-    "password": "securePassword123",
-    "birthDate": "1995-08-20",
+    "id": "ba09fdcb-a9f0-43c1-8832-029aa0053e82",
+    "fullName": "Test Tourist User",
+    "birthDate": "1995-05-20T00:00:00.000Z",
     "gender": "FEMALE",
     "nationality": "Singaporean",
-    "passportNumber": "Y7654321"
-  }
-  ```
-* **Response**:
-  ```json
-  {
-    "id": "c76b9e28-dfcd-40a2-9fa9-4458d9bb5e9b",
-    "fullName": "Jane Doe",
-    "email": "jane@example.com",
-    "role": "STAFF",
-    "birthDate": "1995-08-20T00:00:00.000Z",
-    "gender": "FEMALE",
-    "nationality": "Singaporean",
-    "passportNumber": "Y7654321",
-    "isActive": true,
-    "createdAt": "2026-06-19T07:22:00.000Z",
-    "updatedAt": "2026-06-19T07:22:00.000Z"
-  }
-  ```
-
-#### GET /employees
-* **Description**: Returns a paginated and searchable list of employees.
-* **Query Parameters**:
-  * `page` (optional, default: `1`)
-  * `limit` (optional, default: `10`, max: `100`)
-  * `search` (optional, matches fullName/email case-insensitively)
-  * `sortBy` (optional, allowed: `id` | `fullName` | `email` | `createdAt` | `updatedAt`, default: `createdAt`)
-  * `sortOrder` (optional, `asc` | `desc`, default: `desc`)
-* **Response**:
-  ```json
-  {
-    "success": true,
-    "data": [ ... ],
-    "meta": {
-      "page": 1,
-      "limit": 10,
-      "total": 1,
-      "totalPages": 1
-    }
-  }
-  ```
-
-#### GET /employees/:id
-* **Description**: Gets employee details by UUID.
-* **Response**: Same as `POST /employees` body response.
-
-#### PATCH /employees/:id
-* **Description**: Updates profile details for an employee.
-* **Request**: Any fields from `POST /employees` body (optional).
-* **Response**: Updated employee details.
-
-#### DELETE /employees/:id
-* **Description**: Soft deletes employee profile by setting `deletedAt`.
-* **Response**: `204 No Content`
-
----
-
-### Tourists
-
-#### POST /tourists
-* **Description**: Registers a tourist and links a passport in a single transaction.
-* **Request**:
-  ```json
-  {
-    "fullName": "John Doe",
-    "birthDate": "1990-05-15",
-    "gender": "MALE",
-    "nationality": "United States",
-    "email": "john.doe@example.com",
-    "phone": "+1234567890",
-    "notes": "VIP guest",
-    "passport": {
-      "passportNumber": "A12345678",
-      "issueDate": "2020-01-15",
-      "expiryDate": "2030-01-15",
-      "placeOfIssue": "New York, USA"
-    }
-  }
-  ```
-* **Response**:
-  ```json
-  {
-    "id": "d052b618-910f-4886-8d69-5a1e27a6949b",
-    "fullName": "John Doe",
-    "birthDate": "1990-05-15T00:00:00.000Z",
-    "gender": "MALE",
-    "nationality": "United States",
-    "email": "john.doe@example.com",
-    "phone": "+1234567890",
+    "email": "tourist.test@example.com",
+    "phone": "+6588889999",
     "notes": "VIP guest",
     "status": "ACTIVE",
-    "createdAt": "2026-06-19T07:23:00.000Z",
-    "updatedAt": "2026-06-19T07:23:00.000Z",
-    "createdByEmployeeId": "c1611a91-4d33-4bb4-ac81-ec0e02613cfb",
+    "createdAt": "2026-06-20T01:43:04.854Z",
+    "updatedAt": "2026-06-20T01:43:04.854Z",
+    "createdByEmployeeId": "c4756c3c-fa39-4b8b-bd69-f75a12a5ba0d",
     "updatedByEmployeeId": null,
     "createdByEmployee": { "id": "...", "fullName": "..." },
     "updatedByEmployee": null,
-    "passport": {
-      "id": "f5165991-5a02-4742-a279-3e3e098df11a",
-      "touristId": "d052b618-910f-4886-8d69-5a1e27a6949b",
-      "passportNumber": "A12345678",
-      "issueDate": "2020-01-15T00:00:00.000Z",
-      "expiryDate": "2030-01-15T00:00:00.000Z",
-      "placeOfIssue": "New York, USA",
-      "createdAt": "2026-06-19T07:23:00.000Z",
-      "updatedAt": "2026-06-19T07:23:00.000Z"
-    }
+    "passport": { ... }
   }
   ```
 
-#### GET /tourists
-* **Description**: Returns paginated, searchable, and filterable list of tourists.
-* **Query Parameters**:
-  * `page` (optional, default: `1`)
-  * `limit` (optional, default: `10`, max: `100`)
-  * `search` (optional, matches fullName/email case-insensitively)
-  * `status` (optional, filter by status `ACTIVE` | `INACTIVE` | `BLACKLISTED`)
-  * `sortBy` (optional, allowed: `id` | `fullName` | `createdAt` | `updatedAt`, default: `createdAt`)
-  * `sortOrder` (optional, `asc` | `desc`, default: `desc`)
+#### GET /tourists/me/trips
+* **Description**: Returns all trips assigned to the tourist.
 * **Response**:
   ```json
-  {
-    "success": true,
-    "data": [ ... ],
-    "meta": {
-      "page": 1,
-      "limit": 10,
-      "total": 1,
-      "totalPages": 1
+  [
+    {
+      "tripId": "trip-uuid",
+      "tripName": "Tokyo Explorer",
+      "tripDescription": "Tokyo sightseeing package",
+      "startDate": "2026-07-01T00:00:00.000Z",
+      "endDate": "2026-07-07T00:00:00.000Z",
+      "tripStatus": "UPCOMING",
+      "destinationName": "Sensoji Temple",
+      "destinationCity": "Tokyo",
+      "destinationCountry": "Japan"
     }
-  }
+  ]
   ```
 
-#### GET /tourists/:id
-* **Description**: Gets tourist details with passport.
-* **Response**: Same as `POST /tourists` response.
-
-#### PATCH /tourists/:id
-* **Description**: Updates profile details (excludes passport edits).
-* **Request**:
-  ```json
-  {
-    "fullName": "John Jonathan Doe",
-    "status": "INACTIVE"
-  }
-  ```
-* **Response**: Updated tourist object.
-
-#### DELETE /tourists/:id
-* **Description**: Soft deletes the tourist record.
-* **Response**: `204 No Content`
-
----
-
-### Passports
-
-#### POST /passports
-* **Description**: Links passport information to an existing tourist.
-* **Request**:
-  ```json
-  {
-    "touristId": "d052b618-910f-4886-8d69-5a1e27a6949b",
-    "passportNumber": "B98765432",
-    "issueDate": "2021-05-10",
-    "expiryDate": "2031-05-10",
-    "placeOfIssue": "Chicago, USA"
-  }
-  ```
-* **Response**: Created passport details.
-
-#### GET /passports/:id
-* **Description**: Returns passport details with tourist summary.
-* **Response**: Passport details with nested tourist owner data.
-
-#### PATCH /passports/:id
-* **Description**: Updates details of passport (passport number cannot be changed).
-* **Request**:
-  ```json
-  {
-    "placeOfIssue": "Washington DC, USA"
-  }
-  ```
-* **Response**: Updated passport object.
-
----
-
-### Visa Applications
-
-#### POST /api/v1/visa-applications
-* **Description**: Creates a new application. Initial status is `DRAFT`.
-* **Request**:
-  ```json
-  {
-    "touristId": "d052b618-910f-4886-8d69-5a1e27a6949b",
-    "country": "Japan",
-    "visaType": "Tourist",
-    "notes": "First time visit"
-  }
-  ```
-* **Response**:
-  ```json
-  {
-    "id": "e0b904e1-2795-46aa-abfb-940716ee4b0c",
-    "applicationNumber": "VA-2026-000001",
-    "touristId": "d052b618-910f-4886-8d69-5a1e27a6949b",
-    "country": "Japan",
-    "visaType": "Tourist",
-    "status": "DRAFT",
-    "submissionDate": null,
-    "decisionDate": null,
-    "notes": "First time visit",
-    "createdByEmployeeId": "c1611a91-4d33-4bb4-ac81-ec0e02613cfb",
-    "updatedByEmployeeId": null,
-    "createdAt": "2026-06-19T07:24:00.000Z",
-    "updatedAt": "2026-06-19T07:24:00.000Z",
-    "tourist": { ... },
-    "createdByEmployee": { "id": "...", "fullName": "..." },
-    "updatedByEmployee": null
-  }
-  ```
-
-#### GET /api/v1/visa-applications
-* **Description**: Returns a paginated, searchable, and filtered list of applications.
-* **Query Parameters**:
-  * `page` (optional)
-  * `limit` (optional)
-  * `search` (optional, searches applicationNumber or tourist fullName)
-  * `status` (optional, `DRAFT` | `SUBMITTED` | `IN_REVIEW` | `APPROVED` | `REJECTED` | `CANCELLED`)
-  * `country` (optional)
-* **Response**: Paginated items with metadata.
-
-#### GET /api/v1/visa-applications/:id
-* **Description**: Details of a visa application, including tourist and passport.
-* **Response**: Application details.
-
-#### PATCH /api/v1/visa-applications/:id
-* **Description**: Updates application (allowed only if status is `DRAFT`).
-* **Request**:
-  ```json
-  {
-    "country": "South Korea",
-    "visaType": "Business"
-  }
-  ```
-* **Response**: Updated application details.
-
-#### DELETE /api/v1/visa-applications/:id
-* **Description**: Soft deletes the application.
-* **Response**: `204 No Content`
-
-#### PATCH /api/v1/visa-applications/:id/status
-* **Description**: Steps through the application process status.
-* **Request**:
-  ```json
-  {
-    "status": "SUBMITTED",
-    "notes": "Documents verified"
-  }
-  ```
-* **Response**: Updated application details.
-
----
-
-### Destinations
-
-#### POST /destinations
-* **Description**: Creates a new destination.
-* **Response**: Created destination details.
-
-#### GET /destinations
-* **Description**: Returns a paginated list of destinations.
-* **Response**: Paginated items with metadata.
-
-#### GET /destinations/:id
-* **Description**: Details of a destination.
-* **Response**: Destination details.
-
-#### PATCH /destinations/:id
-* **Description**: Updates destination.
-* **Response**: Updated destination details.
-
-#### DELETE /destinations/:id
-* **Description**: Soft deletes the destination.
-* **Response**: `204 No Content`
-
----
-
-### Trips
-
-#### POST /trips
-* **Description**: Creates a new trip.
-* **Response**: Created trip details.
-
-#### GET /trips
-* **Description**: Returns a paginated list of trips.
-* **Response**: Paginated items with metadata.
-
-#### GET /trips/:id
-* **Description**: Details of a trip.
-* **Response**: Trip details.
-
-#### PATCH /trips/:id
-* **Description**: Updates trip.
-* **Response**: Updated trip details.
-
-#### DELETE /trips/:id
-* **Description**: Soft deletes the trip.
-* **Response**: `204 No Content`
-
----
-
-### Assignments
-
-#### POST /assignments
-* **Description**: Assigns a tourist to an employee/trip.
-* **Response**: Created assignment details.
-
-#### GET /assignments
-* **Description**: Returns a paginated list of assignments.
-* **Response**: Paginated items with metadata.
-
-#### GET /assignments/:id
-* **Description**: Details of an assignment.
-* **Response**: Assignment details.
-
-#### DELETE /assignments/:id
-* **Description**: Deletes the assignment.
-* **Response**: `204 No Content`
-
+#### GET /tourists/me/trips/:tripId
+* **Description**: Retrieves details of a specific trip assigned to the tourist. Checks participant mapping to prevent IDOR.
+* **Response**: Single trip object details.
 
 ---
 
@@ -806,7 +387,7 @@ docker compose up -d
 ### 4. Database Migrations
 Initialize database tables, schemas, and indices:
 ```bash
-npx prisma migrate dev
+npx prisma db push
 ```
 
 ### 5. Start Application
@@ -860,9 +441,10 @@ Interactive API Swagger documentation is generated automatically on server launc
 
 ## Security Features
 
-* **Cryptographic Password Hashing**: Employee passwords are encrypted using Bcrypt prior to storage.
+* **Cryptographic Password Hashing**: Employee and Tourist passwords are encrypted using Bcrypt prior to storage.
 * **Token Hashing**: Refresh tokens are cryptographically hashed using Bcrypt before DB insertions to prevent compromise in case of database leaks.
 * **Refresh Token Rotation (RTR)**: Stateful token verification that revokes previous tokens and prevents token replay attacks.
+* **User-Type Validation Guard**: Hardened validation checking `userType` claim in JWT payloads, secure by default.
 * **Global Rate Limiting**: Limit API abuse to a default of 100 requests per minute.
 * **Route Rate Limiting**: Stricter 5 attempts per minute rate limit applied to authentication paths (`/auth/login` and `/auth/refresh`).
 * **CORS Hardening**: Strict, non-wildcard CORS config configured via allowed-origin list.
@@ -905,15 +487,6 @@ Unhandled system, database, and rate limiting exceptions are mapped to consisten
   "statusCode": 400
 }
 ```
-
----
-
-## Future Roadmap
-
-The application modular architecture has designated skeletons ready for future service expansion:
-* **`DestinationModule`**: Location, descriptions, and operational flags for destinations.
-* **`TripModule`**: Schedule departures, participant bounds, and travel group mappings.
-* **`AssignmentModule`**: Assignment structures connecting Employees to Tourist workflows.
 
 ---
 
