@@ -19,14 +19,32 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    const employee = await this.prisma.employee.findUnique({
-      where: { id: payload.sub },
-    });
+    const userType = payload.userType ?? 'EMPLOYEE';
 
-    if (!employee || !employee.isActive) {
-      throw new UnauthorizedException('Employee not found or inactive');
+    if (userType === 'EMPLOYEE') {
+      const employee = await this.prisma.employee.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!employee || !employee.isActive) {
+        throw new UnauthorizedException('Employee not found or inactive');
+      }
+
+      return { ...employee, userType: 'EMPLOYEE' };
     }
 
-    return employee;
+    if (userType === 'TOURIST') {
+      const tourist = await this.prisma.tourist.findFirst({
+        where: { id: payload.sub, deletedAt: null },
+      });
+
+      if (!tourist || tourist.status !== 'ACTIVE') {
+        throw new UnauthorizedException('Tourist not found or inactive');
+      }
+
+      return { ...tourist, userType: 'TOURIST' };
+    }
+
+    throw new UnauthorizedException('Invalid token claims');
   }
 }

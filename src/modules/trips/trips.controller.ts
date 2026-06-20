@@ -31,6 +31,8 @@ import { TripsService } from './trips.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripQueryDto } from './dto/trip-query.dto';
+import { TripResponseDto } from './responses/trip-response.dto';
+
 
 @ApiTags('Trips')
 @ApiBearerAuth()
@@ -44,7 +46,7 @@ export class TripsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new trip' })
   @ApiBody({ type: CreateTripDto })
-  @ApiCreatedResponse({ description: 'Trip created successfully' })
+  @ApiCreatedResponse({ description: 'Trip created successfully', type: TripResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - insufficient role' })
   create(@Body() createTripDto: CreateTripDto) {
@@ -63,7 +65,7 @@ export class TripsController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get trip detail by ID' })
-  @ApiOkResponse({ description: 'Trip detail' })
+  @ApiOkResponse({ description: 'Trip detail', type: TripResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.tripsService.findOne(id);
@@ -74,7 +76,7 @@ export class TripsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a trip' })
   @ApiBody({ type: UpdateTripDto })
-  @ApiOkResponse({ description: 'Trip updated successfully' })
+  @ApiOkResponse({ description: 'Trip updated successfully', type: TripResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - insufficient role' })
   update(

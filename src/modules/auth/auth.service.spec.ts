@@ -16,6 +16,9 @@ describe('AuthService', () => {
     employee: {
       findUnique: jest.fn(),
     },
+    tourist: {
+      findFirst: jest.fn(),
+    },
     refreshToken: {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -50,6 +53,9 @@ describe('AuthService', () => {
     prisma = module.get<PrismaService>(PrismaService);
     passwordService = module.get<PasswordService>(PasswordService);
     tokenService = module.get<TokenService>(TokenService);
+
+    mockPrisma.employee.findUnique.mockResolvedValue(null);
+    mockPrisma.tourist.findFirst.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -57,7 +63,7 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should login successfully with valid credentials', async () => {
+    it('should login successfully as employee with valid credentials', async () => {
       const loginDto = { email: 'admin@mlakumulu.com', password: 'password123' };
       const mockEmployee = {
         id: 'employee-id',
@@ -92,12 +98,39 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw UnauthorizedException if employee does not exist', async () => {
-      mockPrisma.employee.findUnique.mockResolvedValue(null);
+    it('should login successfully as tourist with valid credentials', async () => {
+      const loginDto = { email: 'tourist@mlakumulu.com', password: 'password123' };
+      const mockTourist = {
+        id: 'tourist-id',
+        email: 'tourist@mlakumulu.com',
+        password: 'hashed-password',
+        status: 'ACTIVE',
+      };
 
-      await expect(
-        service.login({ email: 'nonexistent@test.com', password: 'password' }),
-      ).rejects.toThrow(UnauthorizedException);
+      mockPrisma.employee.findUnique.mockResolvedValue(null);
+      mockPrisma.tourist.findFirst.mockResolvedValue(mockTourist);
+      mockPasswordService.compare.mockResolvedValue(true);
+      mockTokenService.generateAccessToken.mockReturnValue('access-token');
+      mockTokenService.generateRefreshToken.mockResolvedValue({
+        refreshToken: 'raw-refresh-token',
+        refreshTokenHash: 'hashed-refresh-token',
+      });
+      mockTokenService.getRefreshTokenExpiry.mockReturnValue(new Date());
+
+      const result = await service.login(loginDto);
+
+      expect(prisma.tourist.findFirst).toHaveBeenCalledWith({
+        where: { email: loginDto.email, deletedAt: null },
+      });
+      expect(passwordService.compare).toHaveBeenCalledWith(
+        loginDto.password,
+        mockTourist.password,
+      );
+      expect(prisma.refreshToken.create).toHaveBeenCalled();
+      expect(result).toEqual({
+        accessToken: 'access-token',
+        refreshToken: 'raw-refresh-token',
+      });
     });
 
     it('should throw UnauthorizedException if employee is inactive', async () => {
@@ -113,7 +146,30 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should throw UnauthorizedException for invalid password', async () => {
+    it('should throw UnauthorizedException if tourist is inactive/blacklisted', async () => {
+      const mockTourist = {
+        id: 'tourist-id',
+        email: 'inactive-tourist@test.com',
+        status: 'INACTIVE',
+      };
+      mockPrisma.employee.findUnique.mockResolvedValue(null);
+      mockPrisma.tourist.findFirst.mockResolvedValue(mockTourist);
+
+      await expect(
+        service.login({ email: 'inactive-tourist@test.com', password: 'password' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if neither employee nor tourist exists', async () => {
+      mockPrisma.employee.findUnique.mockResolvedValue(null);
+      mockPrisma.tourist.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.login({ email: 'nonexistent@test.com', password: 'password' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException for invalid password (employee)', async () => {
       const mockEmployee = {
         id: 'employee-id',
         email: 'admin@mlakumulu.com',

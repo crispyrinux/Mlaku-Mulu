@@ -31,6 +31,8 @@ import { DestinationsService } from './destinations.service';
 import { CreateDestinationDto } from './dto/create-destination.dto';
 import { UpdateDestinationDto } from './dto/update-destination.dto';
 import { DestinationQueryDto } from './dto/destination-query.dto';
+import { DestinationResponseDto } from './responses/destination-response.dto';
+
 
 @ApiTags('Destinations')
 @ApiBearerAuth()
@@ -44,7 +46,7 @@ export class DestinationsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new destination' })
   @ApiBody({ type: CreateDestinationDto })
-  @ApiCreatedResponse({ description: 'Destination created successfully' })
+  @ApiCreatedResponse({ description: 'Destination created successfully', type: DestinationResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Admin only' })
   create(@Body() createDestinationDto: CreateDestinationDto) {
@@ -63,7 +65,7 @@ export class DestinationsController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get destination detail by ID' })
-  @ApiOkResponse({ description: 'Destination detail' })
+  @ApiOkResponse({ description: 'Destination detail', type: DestinationResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.destinationsService.findOne(id);
@@ -74,7 +76,7 @@ export class DestinationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a destination' })
   @ApiBody({ type: UpdateDestinationDto })
-  @ApiOkResponse({ description: 'Destination updated successfully' })
+  @ApiOkResponse({ description: 'Destination updated successfully', type: DestinationResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Admin only' })
   update(

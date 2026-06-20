@@ -11,6 +11,7 @@ import { TouristQueryDto } from './dto/tourist-query.dto';
 import { Prisma } from '@prisma/client';
 import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
 import { toPaginatedResponse } from '../../common/utils/pagination.util';
+import { PasswordService } from '../../common/security/password.service';
 
 @Injectable()
 export class TouristsService {
@@ -24,7 +25,10 @@ export class TouristsService {
     },
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly passwordService: PasswordService,
+  ) {}
 
   async create(createTouristDto: CreateTouristDto, employeeId: string) {
     // Check passportNumber uniqueness
@@ -36,6 +40,11 @@ export class TouristsService {
       throw new ConflictException('Passport number already exists');
     }
 
+    // Hash password
+    const hashedPassword = await this.passwordService.hash(
+      createTouristDto.password,
+    );
+
     // Create tourist + passport in a transaction
     const tourist = await this.prisma.$transaction(async (tx) => {
       const newTourist = await tx.tourist.create({
@@ -45,6 +54,7 @@ export class TouristsService {
           gender: createTouristDto.gender,
           nationality: createTouristDto.nationality,
           email: createTouristDto.email,
+          password: hashedPassword,
           phone: createTouristDto.phone,
           notes: createTouristDto.notes,
           createdByEmployeeId: employeeId,
@@ -135,6 +145,10 @@ export class TouristsService {
       throw new NotFoundException('Tourist not found');
     }
 
+    const password = updateTouristDto.password
+      ? await this.passwordService.hash(updateTouristDto.password)
+      : undefined;
+
     const updatedTourist = await this.prisma.tourist.update({
       where: { id },
       data: {
@@ -153,6 +167,7 @@ export class TouristsService {
         ...(updateTouristDto.email !== undefined
           ? { email: updateTouristDto.email }
           : {}),
+        ...(password !== undefined ? { password } : {}),
         ...(updateTouristDto.phone !== undefined
           ? { phone: updateTouristDto.phone }
           : {}),
@@ -183,6 +198,68 @@ export class TouristsService {
       where: { id },
       data: { deletedAt: new Date() },
     });
+  }
+
+  async findTripsForTourist(touristId: string) {
+    const participants = await this.prisma.tripParticipant.findMany({
+      where: { touristId },
+      include: {
+        trip: {
+          include: {
+            destination: true,
+          },
+        },
+      },
+      orderBy: {
+        trip: {
+          startDate: 'asc',
+        },
+      },
+    });
+
+    return participants.map((p) => ({
+      tripId: p.trip.id,
+      tripName: p.trip.name,
+      tripDescription: p.trip.description,
+      startDate: p.trip.startDate,
+      endDate: p.trip.endDate,
+      tripStatus: p.trip.status,
+      destinationName: p.trip.destination.name,
+      destinationCity: p.trip.destination.city,
+      destinationCountry: p.trip.destination.country,
+    }));
+  }
+
+  async findTripDetailsForTourist(touristId: string, tripId: string) {
+    const participant = await this.prisma.tripParticipant.findFirst({
+      where: {
+        touristId,
+        tripId,
+      },
+      include: {
+        trip: {
+          include: {
+            destination: true,
+          },
+        },
+      },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Trip not found or not assigned to you');
+    }
+
+    return {
+      tripId: participant.trip.id,
+      tripName: participant.trip.name,
+      tripDescription: participant.trip.description,
+      startDate: participant.trip.startDate,
+      endDate: participant.trip.endDate,
+      tripStatus: participant.trip.status,
+      destinationName: participant.trip.destination.name,
+      destinationCity: participant.trip.destination.city,
+      destinationCountry: participant.trip.destination.country,
+    };
   }
 
   private toResponse(tourist: any) {

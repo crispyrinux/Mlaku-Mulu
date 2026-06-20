@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -52,10 +53,16 @@ export class CreateTouristDto {
   @IsNotEmpty()
   nationality: string;
 
-  @ApiPropertyOptional({ example: 'john.doe@example.com' })
+  @ApiProperty({ example: 'john.doe@example.com' })
   @IsEmail()
-  @IsOptional()
-  email?: string;
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({ example: 'password123', description: 'Password (min 8 characters)' })
+  @IsString()
+  @MinLength(8)
+  @IsNotEmpty()
+  password: string;
 
   @ApiPropertyOptional({ example: '+1234567890' })
   @IsString()

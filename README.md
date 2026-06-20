@@ -79,9 +79,9 @@ src/
 │   ├── tourists/        # Tourist profiles and management endpoints
 │   ├── passports/       # Decoupled passport details (1:1 with Tourist)
 │   ├── visa-applications/ # Core visa application workflow and query handlers
-│   ├── destination/     # Skeleton module for destination management (future roadmap)
-│   ├── trip/            # Skeleton module for trip scheduling (future roadmap)
-│   └── assignment/      # Skeleton module for tourist assignment (future roadmap)
+│   ├── destinations/    # Destination management and catalog
+│   ├── trips/           # Trip scheduling and management
+│   └── assignments/     # Tourist assignment to trips/employees
 ├── app.module.ts        # Main application module registering config and submodules
 └── main.ts              # Entry point starting the NestJS HTTP server
 ```
@@ -132,6 +132,32 @@ src/
   * `PATCH /api/v1/visa-applications/:id`
   * `DELETE /api/v1/visa-applications/:id`
   * `PATCH /api/v1/visa-applications/:id/status`
+
+### Destinations Module
+* **Responsibilities**: Manages destination master data.
+* **Endpoints**:
+  * `POST /destinations`
+  * `GET /destinations`
+  * `GET /destinations/:id`
+  * `PATCH /destinations/:id`
+  * `DELETE /destinations/:id`
+
+### Trips Module
+* **Responsibilities**: Manages trip packages and scheduling.
+* **Endpoints**:
+  * `POST /trips`
+  * `GET /trips`
+  * `GET /trips/:id`
+  * `PATCH /trips/:id`
+  * `DELETE /trips/:id`
+
+### Assignments Module
+* **Responsibilities**: Manages assignments.
+* **Endpoints**:
+  * `POST /assignments`
+  * `GET /assignments`
+  * `GET /assignments/:id`
+  * `DELETE /assignments/:id`
 
 ---
 
@@ -316,6 +342,21 @@ All routes are protected by the `JwtAuthGuard` except public endpoints. The code
 | `PATCH /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
 | `DELETE /api/v1/visa-applications/:id`| JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
 | `PATCH /api/v1/visa-applications/:id/status`| JWT Bearer| 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `POST /destinations` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
+| `GET /destinations` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /destinations/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /destinations/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
+| `DELETE /destinations/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
+| `POST /trips` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
+| `GET /trips` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /trips/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `PATCH /trips/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
+| `DELETE /trips/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
+| `POST /assignments` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
+| `GET /assignments` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `GET /assignments/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN`, `STAFF` |
+| `DELETE /assignments/:id` | JWT Bearer | 100 req / min | `SUPER_ADMIN`, `ADMIN` |
+
 
 ---
 
@@ -655,6 +696,75 @@ All routes are protected by the `JwtAuthGuard` except public endpoints. The code
   }
   ```
 * **Response**: Updated application details.
+
+---
+
+### Destinations
+
+#### POST /destinations
+* **Description**: Creates a new destination.
+* **Response**: Created destination details.
+
+#### GET /destinations
+* **Description**: Returns a paginated list of destinations.
+* **Response**: Paginated items with metadata.
+
+#### GET /destinations/:id
+* **Description**: Details of a destination.
+* **Response**: Destination details.
+
+#### PATCH /destinations/:id
+* **Description**: Updates destination.
+* **Response**: Updated destination details.
+
+#### DELETE /destinations/:id
+* **Description**: Soft deletes the destination.
+* **Response**: `204 No Content`
+
+---
+
+### Trips
+
+#### POST /trips
+* **Description**: Creates a new trip.
+* **Response**: Created trip details.
+
+#### GET /trips
+* **Description**: Returns a paginated list of trips.
+* **Response**: Paginated items with metadata.
+
+#### GET /trips/:id
+* **Description**: Details of a trip.
+* **Response**: Trip details.
+
+#### PATCH /trips/:id
+* **Description**: Updates trip.
+* **Response**: Updated trip details.
+
+#### DELETE /trips/:id
+* **Description**: Soft deletes the trip.
+* **Response**: `204 No Content`
+
+---
+
+### Assignments
+
+#### POST /assignments
+* **Description**: Assigns a tourist to an employee/trip.
+* **Response**: Created assignment details.
+
+#### GET /assignments
+* **Description**: Returns a paginated list of assignments.
+* **Response**: Paginated items with metadata.
+
+#### GET /assignments/:id
+* **Description**: Details of an assignment.
+* **Response**: Assignment details.
+
+#### DELETE /assignments/:id
+* **Description**: Deletes the assignment.
+* **Response**: `204 No Content`
+
 
 ---
 

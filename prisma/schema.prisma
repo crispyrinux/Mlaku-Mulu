@@ -66,7 +66,8 @@ model Tourist {
   birthDate           DateTime
   gender              Gender
   nationality         String
-  email               String?
+  email               String          @unique
+  password            String
   phone               String?
   notes               String?
   status              TouristStatus   @default(ACTIVE)
@@ -81,6 +82,7 @@ model Tourist {
   assignments         Assignment[]
   tripParticipants    TripParticipant[]
   visaApplications    VisaApplication[]
+  refreshTokens       RefreshToken[]
 
   @@index([createdByEmployeeId])
   @@index([updatedByEmployeeId])
@@ -156,14 +158,17 @@ model TripParticipant {
 model RefreshToken {
   id         String    @id @default(uuid()) @db.Uuid
   tokenHash  String
-  employeeId String    @db.Uuid
+  employeeId String?   @db.Uuid
+  touristId  String?   @db.Uuid
   expiresAt  DateTime
   revokedAt  DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tourist    Tourist?  @relation(fields: [touristId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([employeeId])
+  @@index([touristId])
 }
 
 enum VisaApplicationStatus {

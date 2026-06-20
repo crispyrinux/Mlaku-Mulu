@@ -22,6 +22,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Auth')
@@ -76,12 +77,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout and revoke all refresh tokens' })
   @ApiNoContentResponse({ description: 'Logged out successfully' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  async logout(@CurrentUser() employee: Prisma.Employee): Promise<void> {
-    await this.authService.logout(employee.id);
+  async logout(@CurrentUser() user: any): Promise<void> {
+    await this.authService.logout(user.id, user.userType ?? 'EMPLOYEE');
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current authenticated employee profile' })
   @ApiOkResponse({ description: 'Employee profile' })

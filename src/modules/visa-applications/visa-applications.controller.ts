@@ -33,6 +33,8 @@ import { CreateVisaApplicationDto } from './dto/create-visa-application.dto';
 import { UpdateVisaApplicationDto } from './dto/update-visa-application.dto';
 import { VisaApplicationQueryDto } from './dto/visa-application-query.dto';
 import { UpdateVisaApplicationStatusDto } from './dto/update-visa-application-status.dto';
+import { VisaApplicationResponseDto } from './responses/visa-application-response.dto';
+
 
 @ApiTags('Visa Applications')
 @ApiBearerAuth()
@@ -48,7 +50,7 @@ export class VisaApplicationsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new visa application' })
   @ApiBody({ type: CreateVisaApplicationDto })
-  @ApiCreatedResponse({ description: 'Visa application created successfully' })
+  @ApiCreatedResponse({ description: 'Visa application created successfully', type: VisaApplicationResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   create(
     @Body() createDto: CreateVisaApplicationDto,
@@ -73,6 +75,7 @@ export class VisaApplicationsController {
   @ApiOperation({ summary: 'Get visa application detail by ID' })
   @ApiOkResponse({
     description: 'Visa application detail (includes tourist and passport)',
+    type: VisaApplicationResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -86,7 +89,7 @@ export class VisaApplicationsController {
     summary: 'Update visa application (only allowed in DRAFT status)',
   })
   @ApiBody({ type: UpdateVisaApplicationDto })
-  @ApiOkResponse({ description: 'Visa application updated successfully' })
+  @ApiOkResponse({ description: 'Visa application updated successfully', type: VisaApplicationResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -115,6 +118,7 @@ export class VisaApplicationsController {
   @ApiBody({ type: UpdateVisaApplicationStatusDto })
   @ApiOkResponse({
     description: 'Visa application status updated successfully',
+    type: VisaApplicationResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   updateStatus(

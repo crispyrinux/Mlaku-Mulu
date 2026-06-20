@@ -26,6 +26,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { PassportsService } from './passports.service';
 import { CreatePassportDto } from './dto/create-passport.dto';
 import { UpdatePassportDto } from './dto/update-passport.dto';
+import { PassportResponseDto } from './responses/passport-response.dto';
+
 
 @ApiTags('Passports')
 @ApiBearerAuth()
@@ -39,7 +41,7 @@ export class PassportsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a passport for a tourist' })
   @ApiBody({ type: CreatePassportDto })
-  @ApiCreatedResponse({ description: 'Passport created successfully' })
+  @ApiCreatedResponse({ description: 'Passport created successfully', type: PassportResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   create(@Body() createPassportDto: CreatePassportDto) {
     return this.passportsService.create(createPassportDto);
@@ -49,7 +51,7 @@ export class PassportsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get passport detail with tourist summary' })
-  @ApiOkResponse({ description: 'Passport detail' })
+  @ApiOkResponse({ description: 'Passport detail', type: PassportResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.passportsService.findOne(id);
@@ -62,7 +64,7 @@ export class PassportsController {
     summary: 'Update passport (passport number cannot be changed)',
   })
   @ApiBody({ type: UpdatePassportDto })
-  @ApiOkResponse({ description: 'Passport updated successfully' })
+  @ApiOkResponse({ description: 'Passport updated successfully', type: PassportResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   update(
     @Param('id', ParseUUIDPipe) id: string,

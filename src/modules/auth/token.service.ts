@@ -19,7 +19,7 @@ export class TokenService {
       this.configService.get<string>('jwt.accessExpiresIn') ?? '15m';
 
     return this.jwtService.sign(
-      { sub: payload.sub, role: payload.role },
+      { sub: payload.sub, role: payload.role, userType: payload.userType },
       { secret, expiresIn: expiresIn as any },
     );
   }

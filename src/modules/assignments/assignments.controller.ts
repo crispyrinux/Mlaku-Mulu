@@ -29,6 +29,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { AssignmentsService } from './assignments.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { AssignmentQueryDto } from './dto/assignment-query.dto';
+import { AssignmentResponseDto } from './responses/assignment-response.dto';
+
 
 @ApiTags('Assignments')
 @ApiBearerAuth()
@@ -42,7 +44,7 @@ export class AssignmentsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new assignment' })
   @ApiBody({ type: CreateAssignmentDto })
-  @ApiCreatedResponse({ description: 'Assignment created successfully' })
+  @ApiCreatedResponse({ description: 'Assignment created successfully', type: AssignmentResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Admin only' })
   create(@Body() createAssignmentDto: CreateAssignmentDto) {
@@ -61,7 +63,7 @@ export class AssignmentsController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get assignment detail by ID' })
-  @ApiOkResponse({ description: 'Assignment detail' })
+  @ApiOkResponse({ description: 'Assignment detail', type: AssignmentResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.assignmentsService.findOne(id);

@@ -28,11 +28,13 @@ import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { UserTypes } from '../../common/decorators/user-types.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TouristsService } from './tourists.service';
 import { CreateTouristDto } from './dto/create-tourist.dto';
 import { UpdateTouristDto } from './dto/update-tourist.dto';
 import { TouristQueryDto } from './dto/tourist-query.dto';
+import { TouristResponseDto } from './responses/tourist-response.dto';
 
 @ApiTags('Tourists')
 @ApiBearerAuth()
@@ -41,12 +43,45 @@ import { TouristQueryDto } from './dto/tourist-query.dto';
 export class TouristsController {
   constructor(private readonly touristsService: TouristsService) {}
 
+  @Get('me')
+  @UserTypes('TOURIST')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get current authenticated tourist profile' })
+  @ApiOkResponse({ description: 'Tourist profile', type: TouristResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  getProfile(@CurrentUser() tourist: any) {
+    return this.touristsService.findOne(tourist.id);
+  }
+
+  @Get('me/trips')
+  @UserTypes('TOURIST')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get current authenticated tourist trip history' })
+  @ApiOkResponse({ description: 'Tourist trip history' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  getTripHistory(@CurrentUser() tourist: any) {
+    return this.touristsService.findTripsForTourist(tourist.id);
+  }
+
+  @Get('me/trips/:tripId')
+  @UserTypes('TOURIST')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get details of a trip assigned to the current tourist' })
+  @ApiOkResponse({ description: 'Tourist trip detail' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  getTripDetail(
+    @Param('tripId', ParseUUIDPipe) tripId: string,
+    @CurrentUser() tourist: any,
+  ) {
+    return this.touristsService.findTripDetailsForTourist(tourist.id, tripId);
+  }
+
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new tourist' })
   @ApiBody({ type: CreateTouristDto })
-  @ApiCreatedResponse({ description: 'Tourist created successfully' })
+  @ApiCreatedResponse({ description: 'Tourist created successfully', type: TouristResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   create(
     @Body() createTouristDto: CreateTouristDto,
@@ -69,7 +104,7 @@ export class TouristsController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get tourist detail by ID' })
-  @ApiOkResponse({ description: 'Tourist detail' })
+  @ApiOkResponse({ description: 'Tourist detail', type: TouristResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.touristsService.findOne(id);
@@ -80,7 +115,7 @@ export class TouristsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update tourist (passport managed separately)' })
   @ApiBody({ type: UpdateTouristDto })
-  @ApiOkResponse({ description: 'Tourist updated successfully' })
+  @ApiOkResponse({ description: 'Tourist updated successfully', type: TouristResponseDto })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
