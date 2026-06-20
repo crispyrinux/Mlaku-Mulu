@@ -15,6 +15,7 @@ import { DestinationsModule } from './modules/destinations/destinations.module';
 import { TripsModule } from './modules/trips/trips.module';
 import { AssignmentsModule } from './modules/assignments/assignments.module';
 import { VisaApplicationsModule } from './modules/visa-applications/visa-applications.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -44,6 +45,7 @@ import { AppService } from './app.service';
     TripsModule,
     AssignmentsModule,
     VisaApplicationsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
