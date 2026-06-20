@@ -430,6 +430,47 @@ Use the following commands to spin up PostgreSQL containers defined in the setup
 
 ---
 
+## Deployment to Render
+
+This project can be deployed easily on **Render** (as a Web Service) connected to a production PostgreSQL database (e.g., Render PostgreSQL, Neon, or Supabase).
+
+### 1. Web Service Configurations
+
+* **Runtime**: `Node`
+* **Build Command**:
+  ```bash
+  npm install && npx prisma generate && npm run build && npx prisma migrate deploy
+  ```
+* **Start Command**:
+  ```bash
+  node dist/src/main
+  ```
+  *(Note: Due to the compilation of root-level configs, the compiled entry point resolves to `dist/src/main.js` instead of `dist/main.js`)*.
+
+### 2. Environment Variables
+
+Configure the following environment variables in the Render Web Service:
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `DATABASE_URL` | Yes | Connection URI to production PostgreSQL |
+| `JWT_ACCESS_SECRET` | Yes | Signing secret key for JWT access tokens |
+| `JWT_ACCESS_EXPIRES_IN` | Yes | Expiry duration for access tokens (e.g., `15m`) |
+| `JWT_REFRESH_SECRET` | Yes | Signing secret key for JWT refresh tokens |
+| `JWT_REFRESH_EXPIRES_IN` | Yes | Expiry duration for refresh tokens (e.g., `30d`) |
+| `ENABLE_SWAGGER` | No | Set to `true` to enable Swagger in production |
+| `CORS_ORIGIN` | No | Allowed frontend origin URLs |
+
+### 3. Database Seeding
+
+To create the default Super Admin (`superadmin@example.com` / `superadmin123`), run the following command in the Render **Shell** terminal once the service is online:
+
+```bash
+npx prisma db seed
+```
+
+---
+
 ## Swagger
 
 Interactive API Swagger documentation is generated automatically on server launch in environments where it is enabled:
