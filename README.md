@@ -5,15 +5,15 @@
 
 Backend API untuk **Tourism Management System (Mlaku-Mulu)** yang dirancang menggunakan **NestJS**, **Prisma ORM**, dan **PostgreSQL**. Projek ini siap produksi (*production-ready*) dan ditujukan untuk mempermudah pengelolaan destinasi wisata, penjadwalan perjalanan (*trips*), penugasan staf (*assignments*), manajemen wisatawan (*tourists*), serta pengelolaan berkas paspor dan visa secara aman dan efisien.
 
-*   **URL Aplikasi Live**: [https://mlaku-mulu-api.onrender.com/](https://mlaku-mulu-api.onrender.com/)
-*   **Dokumentasi API Swagger**: [https://mlaku-mulu-api.onrender.com/api/docs](https://mlaku-mulu-api.onrender.com/api/docs)
+*   **URL Live Deployment**: [https://mlaku-mulu-api.onrender.com/](https://mlaku-mulu-api.onrender.com/)
+*   **API Documentation Swagger**: [https://mlaku-mulu-api.onrender.com/api/docs](https://mlaku-mulu-api.onrender.com/api/docs)
 
 ---
 
 ## Fitur Utama
 
-*   **Autentikasi Ganda (Staff & Tourist)**: Flow login terpisah antara karyawan (Staff) dan wisatawan (Tourist) menggunakan JWT Access Token (durasi 15 menit).
-*   **Refresh Token Rotation (RTR)**: Sistem penyegaran token yang aman dengan menyimpan hash token di database dan merotasinya setiap kali digunakan (durasi 30 hari). Re-use token yang sudah kedaluwarsa/direvok akan otomatis menghapus seluruh session aktif untuk mencegah pencurian token.
+*   **Authentication**: Login menggunakan JWT Access Token (durasi 15 menit).
+*   **Refresh Token Rotation (RTR)**: Sistem refresh token yang aman dengan menyimpan hash token di database dan merotasinya setiap kali digunakan (durasi 30 hari). Re-use token yang sudah kedaluwarsa/direvok akan otomatis menghapus seluruh session aktif untuk mencegah pencurian token.
 *   **Portal Mandiri Wisatawan (Tourist Self-Service)**: Wisatawan dapat melihat profil diri, riwayat perjalanan, dan detail perjalanan yang ditugaskan secara aman (dilengkapi proteksi IDOR).
 *   **Sistem Alur Visa (Visa State-Machine)**: Alur pengajuan visa dengan transisi status yang ketat: `DRAFT` &rarr; `SUBMITTED` &rarr; `IN_REVIEW` &rarr; `APPROVED`/`REJECTED`/`CANCELLED`. Nomor pengajuan dihasilkan secara otomatis per tahun (`VA-YYYY-000001`).
 *   **Dashboard Analitik Real-Time (Business Intelligence)**: Pusat pemantauan operasional terpisah berdasarkan hak akses pengguna:
@@ -62,7 +62,7 @@ src/
 
 ---
 
-## Dokumentasi API (Swagger)
+## API Documentation (Swagger)
 
 Seluruh dokumentasi API interaktif, skema DTO, serta contoh request/response disajikan secara lengkap di **Swagger UI**. Reviewer dapat menguji langsung setiap endpoint secara langsung melalui sandbox Swagger:
 
@@ -85,7 +85,7 @@ Seluruh dokumentasi API interaktif, skema DTO, serta contoh request/response dis
 
 ---
 
-## Hak Akses & Alur Sistem (System Roles & Flows)
+## System Roles & Flows
 
 Sistem **Mlaku-Mulu** beroperasi dengan membagi pengguna ke dalam tiga peran (persona) utama berdasarkan *Role-Based Access Control* (RBAC). Berikut adalah gambaran besar alur yang dapat dilakukan oleh masing-masing peran:
 
@@ -150,50 +150,6 @@ graph TD
 
 ---
 
-### Visualisasi Flow Analitik Operasional
-Selain alur CRUD di atas, berikut adalah visualisasi flow spesifik untuk masing-masing peran saat menggunakan *Dashboard Analytics*:
-
-### 1. Alur Pengguna: Admin & Super Admin (Operasional Bisnis Makro)
-Peran Admin/Super Admin berfokus pada pengawasan kinerja bisnis makro, alokasi sumber daya staf, dan manajemen destinasi global.
-```mermaid
-graph TD
-    A[Super Admin / Admin Login] --> B[Akses Dashboard Admin /analytics/admin]
-    B --> C{Tinjau Metrik Utama}
-    C -->|Total Data| D[Lihat Jumlah Turis, Staf, Destinasi, & Trip]
-    C -->|Workload Staf| E[Identifikasi Top 5 Staf dengan Assignment Terbanyak]
-    C -->|Visa Funnel| F[Analisis Rasio Visa APPROVED vs REJECTED]
-    C -->|Demografi| G[Analisis Asal Negara & Gender Wisatawan]
-    E --> H[Optimasi Distribusi Penugasan Wisatawan]
-    D --> I[Buat Destinasi/Trip Baru untuk Ekspansi Bisnis]
-```
-
-### 2. Alur Pengguna: Staff (Manajemen Wisatawan & Dokumen)
-Peran Staff berfokus pada pendampingan personal wisatawan, koordinasi trip, dan pemrosesan berkas paspor/visa secara efisien.
-```mermaid
-graph TD
-    A[Staff Login] --> B[Akses Dashboard Staff /analytics/staff]
-    B --> C{Tinjau Beban Kerja & Jadwal}
-    C -->|Beban Saat Ini| D[Lihat Total Wisatawan Asuhan & Status Trip Wisatawan]
-    C -->|Jadwal Trip Terdekat| E[Lihat Top 5 Trip Mendatang dari Wisatawan Asuhannya]
-    C -->|Visa Tracker| F[Lihat Top 5 Visa yang Diproses Staf Ini & Status Terbarunya]
-    E --> G[Persiapan Logistik & Dokumen Pendampingan Wisatawan]
-    F --> H[Tindak Lanjuti Pengajuan Visa yang Tertunda/Draf]
-```
-
-### 3. Alur Pengguna: Tourist (Portal Mandiri Wisatawan)
-Peran Tourist berfokus pada pemantauan berkas perjalanan mandiri tanpa memerlukan interaksi tatap muka langsung dengan staf.
-```mermaid
-graph TD
-    A[Tourist Login] --> B[Akses Dashboard Tourist /analytics/tourist]
-    B --> C{Tinjau Status Perjalanan & Berkas}
-    C -->|Pemberitahuan Paspor| D[Tinjau daysUntilExpiry & Notifikasi Kedaluwarsa Paspor]
-    C -->|Statistik Trip| E[Lihat Jumlah Perjalanan COMPLETED, UPCOMING, & ONGOING]
-    C -->|Status Visa Terkini| F[Pantau Status Pengajuan Visa Terbaru APPROVED/IN_REVIEW]
-    D -->|Sisa Hari < 180 Hari| G[Ajukan Perpanjangan Paspor Mandiri]
-    F -->|Status REJECTED/CANCELLED| H[Hubungi Staf Pendamping untuk Perbaikan Berkas]
-```
-
----
 
 ## Environment Variables
 
